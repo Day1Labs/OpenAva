@@ -1,4 +1,4 @@
-"chat.workspace.sectionTitle" = "项目工作区 (Workspace)";
+"chat.workspace.sectionTitle" = "项目工作区";
 "chat.workspace.import" = "导入工作区...";
 "chat.workspace.create" = "新建工作区...";
 "chat.workspace.openDirectory" = "打开工作区目录";
@@ -127,7 +127,7 @@
 "agent.creation.preset.summarizer.truth.2" = "负责撰写复盘报告、发布说明或知识沉淀文档。";
 "agent.creation.preset.summarizer.truth.3" = "关注受众体验，确保文档结构清晰、重点突出。";
 
-"settings.llm.navigationTitle" = "LLM";
+"settings.llm.navigationTitle" = "模型";
 "settings.llm.provider.picker" = "服务商";
 "settings.llm.provider.header" = "服务商";
 "settings.llm.provider.footer" = "对于主流服务商，通常只需要 API Key 和模型选择。需要完全手动配置时请选择 Custom。";

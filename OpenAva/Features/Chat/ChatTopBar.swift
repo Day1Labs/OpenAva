@@ -244,7 +244,7 @@ enum ChatTopBar {
         includeBackgroundExecution: Bool,
         includeAgentManagement: Bool = true
     ) -> [ConfigurationSection] {
-        var items = [
+        let coreItems = [
             ConfigurationItem(
                 id: "open-llm",
                 kind: .destination(.llm),
@@ -261,14 +261,9 @@ enum ChatTopBar {
             ),
         ]
 
-        let configurationSection = ConfigurationSection(
-            id: "configuration",
-            items: items
-        )
-
-        var managementItems: [ConfigurationItem] = []
+        var toggleItems: [ConfigurationItem] = []
         if includeBackgroundExecution {
-            managementItems.append(
+            toggleItems.append(
                 ConfigurationItem(
                     id: "background-execution",
                     kind: .backgroundExecution(enabled: isBackgroundEnabled),
@@ -279,7 +274,7 @@ enum ChatTopBar {
             )
         }
         if includeAgentManagement {
-            managementItems.append(
+            toggleItems.append(
                 ConfigurationItem(
                     id: "auto-compact",
                     kind: .autoCompact(enabled: autoCompactEnabled),
@@ -289,7 +284,8 @@ enum ChatTopBar {
                 )
             )
         }
-        managementItems.append(contentsOf: [
+
+        let extensionItems = [
             ConfigurationItem(
                 id: "open-cron",
                 kind: .destination(.cron),
@@ -304,7 +300,9 @@ enum ChatTopBar {
                 systemImage: "dot.radiowaves.left.and.right",
                 isDestructive: false
             ),
-        ])
+        ]
+
+        var managementItems: [ConfigurationItem] = []
         if includeAgentManagement {
             managementItems.append(contentsOf: [
                 ConfigurationItem(
@@ -324,9 +322,20 @@ enum ChatTopBar {
             ])
         }
 
-        return [
-            configurationSection,
-            ConfigurationSection(id: "management", items: managementItems),
+        var sections: [ConfigurationSection] = [
+            ConfigurationSection(id: "core", items: coreItems),
         ]
+
+        if !toggleItems.isEmpty {
+            sections.append(ConfigurationSection(id: "toggles", items: toggleItems))
+        }
+
+        sections.append(ConfigurationSection(id: "extensions", items: extensionItems))
+
+        if !managementItems.isEmpty {
+            sections.append(ConfigurationSection(id: "management", items: managementItems))
+        }
+
+        return sections
     }
 }

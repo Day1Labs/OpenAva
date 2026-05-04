@@ -845,7 +845,12 @@ private struct ChatScreen: View {
         @ViewBuilder
         private var agentMenuContent: some View {
             Section(L10n.tr("chat.workspace.sectionTitle")) {
-                ForEach(topBarWorkspaceMenuEntries) { entry in
+                ForEach(topBarWorkspaceMenuEntries.filter { if case .workspace = $0.kind { return true } else { return false } }) { entry in
+                    workspaceMenuEntryView(entry)
+                }
+            }
+            Section {
+                ForEach(topBarWorkspaceMenuEntries.filter { if case .workspace = $0.kind { return false } else { return true } }) { entry in
                     workspaceMenuEntryView(entry)
                 }
             }
@@ -911,9 +916,9 @@ private struct ChatScreen: View {
                     onWorkspaceSwitch?(workspaceID)
                 } label: {
                     if entry.isSelected {
-                        Label(entry.displayTitle, systemImage: "checkmark")
+                        Label(entry.title, systemImage: "checkmark")
                     } else {
-                        Text(entry.displayTitle)
+                        Text(entry.title)
                     }
                 }
             case .openActiveWorkspaceDirectory:

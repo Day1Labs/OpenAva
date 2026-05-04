@@ -1033,14 +1033,19 @@ extension ChatViewControllerWrapper {
         private func buildAgentMenu() -> UIMenu {
             let workspaceEntries = ChatTopBar.workspaceMenuEntries(workspaces: projectWorkspaces, activeWorkspaceID: activeProjectWorkspaceID)
             let entries = ChatTopBar.sessionMenuEntries(teams: teams, agents: agents, activeContext: activeContext)
-            var workspaceChildren: [UIMenuElement] = []
+            var workspaceListChildren: [UIMenuElement] = []
+            var workspaceActionChildren: [UIMenuElement] = []
             var roomChildren: [UIMenuElement] = []
             var agentChildren: [UIMenuElement] = []
             var secondaryChildren: [UIMenuElement] = []
 
             for entry in workspaceEntries {
                 guard let element = makeWorkspaceMenuElement(for: entry) else { continue }
-                workspaceChildren.append(element)
+                if case .workspace = entry.kind {
+                    workspaceListChildren.append(element)
+                } else {
+                    workspaceActionChildren.append(element)
+                }
             }
 
             for entry in entries {
@@ -1056,8 +1061,11 @@ extension ChatViewControllerWrapper {
             }
 
             var sections: [UIMenu] = []
-            if !workspaceChildren.isEmpty {
-                sections.append(UIMenu(title: L10n.tr("chat.workspace.sectionTitle"), options: .displayInline, children: workspaceChildren))
+            if !workspaceListChildren.isEmpty {
+                sections.append(UIMenu(title: L10n.tr("chat.workspace.sectionTitle"), options: .displayInline, children: workspaceListChildren))
+            }
+            if !workspaceActionChildren.isEmpty {
+                sections.append(UIMenu(title: "", options: .displayInline, children: workspaceActionChildren))
             }
             if !roomChildren.isEmpty {
                 sections.append(UIMenu(title: "", options: .displayInline, children: roomChildren))
@@ -1076,7 +1084,8 @@ extension ChatViewControllerWrapper {
             case let .workspace(workspaceID):
                 let state: UIMenuElement.State = entry.isSelected ? .on : .off
                 return UIAction(
-                    title: entry.displayTitle,
+                    title: entry.title,
+                    subtitle: entry.subtitle.isEmpty ? nil : entry.subtitle,
                     image: nil,
                     identifier: nil,
                     discoverabilityTitle: nil,
