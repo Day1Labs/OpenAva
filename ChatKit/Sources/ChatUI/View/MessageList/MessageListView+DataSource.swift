@@ -246,6 +246,14 @@ extension MessageListView {
         let rawBlock: String
     }
 
+    struct MermaidRepresentation: Hashable {
+        let id: String
+        let messageID: String
+        let createdAt: Date
+        let source: String
+        let rawBlock: String
+    }
+
     struct MediaRepresentation: Hashable {
         let id: String
         let messageID: String
@@ -307,6 +315,7 @@ extension MessageListView {
         case toolResultContent(String, ToolResultRepresentation)
         case chartContent(String, ChartRepresentation)
         case mapContent(String, MapRepresentation)
+        case mermaidContent(String, MermaidRepresentation)
         case mediaContent(String, MediaRepresentation)
         case compactBoundary(String, CompactBoundaryRepresentation)
         case todoList(String, TodoListRepresentation)
@@ -327,6 +336,7 @@ extension MessageListView {
             case let .toolResultContent(id, _): "tool-result-\(id)"
             case let .chartContent(id, _): "chart-\(id)"
             case let .mapContent(id, _): "map-\(id)"
+            case let .mermaidContent(id, _): "mermaid-\(id)"
             case let .mediaContent(id, _): "media-\(id)"
             case let .compactBoundary(id, _): "compact-boundary-\(id)"
             case let .todoList(id, _): "todo-list-\(id)"
@@ -727,6 +737,70 @@ extension MessageListView {
                         }
                     case let .text(textPart):
                         guard !textPart.text.isEmpty else { continue }
+
+                        func appendMarkdown(_ content: String, id: String) {
+                            guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                            let textRep = MessageRepresentation(
+                                id: id,
+                                messageID: message.id,
+                                createdAt: message.createdAt,
+                                role: message.role,
+                                content: content,
+                                source: MessageSourceRepresentation.make(from: message.metadata),
+                                isRevealed: !reasoningCollapsed,
+                                isThinking: false,
+                                thinkingDuration: 0,
+                                agentName: message.metadata["agentName"],
+                                agentEmoji: message.metadata["agentEmoji"]
+                            )
+                            append(.responseContent(id, textRep), leadingInset: currentLeadingInset)
+                        }
+
+                        func appendChart(_ spec: ChartSpec, rawBlock: String, id: String) {
+                            let chartRep = ChartRepresentation(
+                                id: id,
+                                messageID: message.id,
+                                createdAt: message.createdAt,
+                                spec: spec,
+                                rawBlock: rawBlock
+                            )
+                            append(.chartContent(id, chartRep), leadingInset: currentLeadingInset)
+                        }
+
+                        func appendMap(_ spec: MapSpec, rawBlock: String, id: String) {
+                            let mapRep = MapRepresentation(
+                                id: id,
+                                messageID: message.id,
+                                createdAt: message.createdAt,
+                                spec: spec,
+                                rawBlock: rawBlock
+                            )
+                            append(.mapContent(id, mapRep), leadingInset: currentLeadingInset)
+                        }
+
+                        func appendMedia(_ media: MarkdownMediaPayload, id: String) {
+                            let mediaRep = MediaRepresentation(
+                                id: id,
+                                messageID: message.id,
+                                createdAt: message.createdAt,
+                                kind: media.kind,
+                                url: media.url,
+                                altText: media.altText
+                            )
+                            append(.mediaContent(id, mediaRep), leadingInset: currentLeadingInset)
+                        }
+
+                        func appendMermaid(_ source: String, rawBlock: String, id: String) {
+                            let mermaidRep = MermaidRepresentation(
+                                id: id,
+                                messageID: message.id,
+                                createdAt: message.createdAt,
+                                source: source,
+                                rawBlock: rawBlock
+                            )
+                            append(.mermaidContent(id, mermaidRep), leadingInset: currentLeadingInset)
+                        }
+
                         let segments = ChartMarkdownParser.parseSegments(from: textPart.text)
                         // Keep segment order to preserve the model output structure.
                         for (index, segment) in segments.enumerated() {
@@ -741,121 +815,50 @@ extension MessageListView {
                                         for (mediaIndex, mediaSegment) in mediaSegments.enumerated() {
                                             switch mediaSegment {
                                             case let .markdown(mediaMarkdown):
-                                                guard !mediaMarkdown.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                                                    continue
+                                                let mermaidSegments = MermaidMarkdownParser.parseSegments(from: mediaMarkdown)
+                                                for (mermaidIndex, mermaidSegment) in mermaidSegments.enumerated() {
+                                                    let idSuffix = "\(index).\(nestedIndex).\(mediaIndex).\(mermaidIndex)"
+                                                    switch mermaidSegment {
+                                                    case let .markdown(mermaidMarkdown):
+                                                        appendMarkdown(mermaidMarkdown, id: "\(textPart.id).md.\(idSuffix)")
+                                                    case let .mermaid(source, rawBlock):
+                                                        appendMermaid(source, rawBlock: rawBlock, id: "\(textPart.id).mermaid.\(idSuffix)")
+                                                    case let .chart(spec, rawBlock):
+                                                        appendChart(spec, rawBlock: rawBlock, id: "\(textPart.id).chart.\(idSuffix)")
+                                                    case let .map(spec, rawBlock):
+                                                        appendMap(spec, rawBlock: rawBlock, id: "\(textPart.id).map.\(idSuffix)")
+                                                    case let .media(media):
+                                                        appendMedia(media, id: "\(textPart.id).media.\(idSuffix)")
+                                                    }
                                                 }
-                                                let segmentID = "\(textPart.id).md.\(index).\(nestedIndex).\(mediaIndex)"
-                                                let textRep = MessageRepresentation(
-                                                    id: segmentID,
-                                                    messageID: message.id,
-                                                    createdAt: message.createdAt,
-                                                    role: message.role,
-                                                    content: mediaMarkdown,
-                                                    source: MessageSourceRepresentation.make(from: message.metadata),
-                                                    isRevealed: !reasoningCollapsed,
-                                                    isThinking: false,
-                                                    thinkingDuration: 0,
-                                                    agentName: message.metadata["agentName"],
-                                                    agentEmoji: message.metadata["agentEmoji"]
-                                                )
-                                                append(.responseContent(segmentID, textRep), leadingInset: currentLeadingInset)
                                             case let .media(media):
-                                                let mediaID = "\(textPart.id).media.\(index).\(nestedIndex).\(mediaIndex)"
-                                                let mediaRep = MediaRepresentation(
-                                                    id: mediaID,
-                                                    messageID: message.id,
-                                                    createdAt: message.createdAt,
-                                                    kind: media.kind,
-                                                    url: media.url,
-                                                    altText: media.altText
-                                                )
-                                                append(.mediaContent(mediaID, mediaRep), leadingInset: currentLeadingInset)
+                                                appendMedia(media, id: "\(textPart.id).media.\(index).\(nestedIndex).\(mediaIndex)")
                                             case let .chart(spec, rawBlock):
-                                                let chartID = "\(textPart.id).chart.\(index).\(nestedIndex).\(mediaIndex)"
-                                                let chartRep = ChartRepresentation(
-                                                    id: chartID,
-                                                    messageID: message.id,
-                                                    createdAt: message.createdAt,
-                                                    spec: spec,
-                                                    rawBlock: rawBlock
-                                                )
-                                                append(.chartContent(chartID, chartRep), leadingInset: currentLeadingInset)
+                                                appendChart(spec, rawBlock: rawBlock, id: "\(textPart.id).chart.\(index).\(nestedIndex).\(mediaIndex)")
                                             case let .map(spec, rawBlock):
-                                                let mapID = "\(textPart.id).map.\(index).\(nestedIndex).\(mediaIndex)"
-                                                let mapRep = MapRepresentation(
-                                                    id: mapID,
-                                                    messageID: message.id,
-                                                    createdAt: message.createdAt,
-                                                    spec: spec,
-                                                    rawBlock: rawBlock
-                                                )
-                                                append(.mapContent(mapID, mapRep), leadingInset: currentLeadingInset)
+                                                appendMap(spec, rawBlock: rawBlock, id: "\(textPart.id).map.\(index).\(nestedIndex).\(mediaIndex)")
+                                            case let .mermaid(source, rawBlock):
+                                                appendMermaid(source, rawBlock: rawBlock, id: "\(textPart.id).mermaid.\(index).\(nestedIndex).\(mediaIndex)")
                                             }
                                         }
                                     case let .map(spec, rawBlock):
-                                        let mapID = "\(textPart.id).map.\(index).\(nestedIndex)"
-                                        let mapRep = MapRepresentation(
-                                            id: mapID,
-                                            messageID: message.id,
-                                            createdAt: message.createdAt,
-                                            spec: spec,
-                                            rawBlock: rawBlock
-                                        )
-                                        append(.mapContent(mapID, mapRep), leadingInset: currentLeadingInset)
+                                        appendMap(spec, rawBlock: rawBlock, id: "\(textPart.id).map.\(index).\(nestedIndex)")
                                     case let .chart(spec, rawBlock):
-                                        let chartID = "\(textPart.id).chart.\(index).\(nestedIndex)"
-                                        let chartRep = ChartRepresentation(
-                                            id: chartID,
-                                            messageID: message.id,
-                                            createdAt: message.createdAt,
-                                            spec: spec,
-                                            rawBlock: rawBlock
-                                        )
-                                        append(.chartContent(chartID, chartRep), leadingInset: currentLeadingInset)
+                                        appendChart(spec, rawBlock: rawBlock, id: "\(textPart.id).chart.\(index).\(nestedIndex)")
                                     case let .media(media):
-                                        let mediaID = "\(textPart.id).media.\(index).\(nestedIndex)"
-                                        let mediaRep = MediaRepresentation(
-                                            id: mediaID,
-                                            messageID: message.id,
-                                            createdAt: message.createdAt,
-                                            kind: media.kind,
-                                            url: media.url,
-                                            altText: media.altText
-                                        )
-                                        append(.mediaContent(mediaID, mediaRep), leadingInset: currentLeadingInset)
+                                        appendMedia(media, id: "\(textPart.id).media.\(index).\(nestedIndex)")
+                                    case let .mermaid(source, rawBlock):
+                                        appendMermaid(source, rawBlock: rawBlock, id: "\(textPart.id).mermaid.\(index).\(nestedIndex)")
                                     }
                                 }
                             case let .chart(spec, rawBlock):
-                                let chartID = "\(textPart.id).chart.\(index)"
-                                let chartRep = ChartRepresentation(
-                                    id: chartID,
-                                    messageID: message.id,
-                                    createdAt: message.createdAt,
-                                    spec: spec,
-                                    rawBlock: rawBlock
-                                )
-                                append(.chartContent(chartID, chartRep), leadingInset: currentLeadingInset)
+                                appendChart(spec, rawBlock: rawBlock, id: "\(textPart.id).chart.\(index)")
                             case let .map(spec, rawBlock):
-                                let mapID = "\(textPart.id).map.\(index)"
-                                let mapRep = MapRepresentation(
-                                    id: mapID,
-                                    messageID: message.id,
-                                    createdAt: message.createdAt,
-                                    spec: spec,
-                                    rawBlock: rawBlock
-                                )
-                                append(.mapContent(mapID, mapRep), leadingInset: currentLeadingInset)
+                                appendMap(spec, rawBlock: rawBlock, id: "\(textPart.id).map.\(index)")
                             case let .media(media):
-                                let mediaID = "\(textPart.id).media.\(index)"
-                                let mediaRep = MediaRepresentation(
-                                    id: mediaID,
-                                    messageID: message.id,
-                                    createdAt: message.createdAt,
-                                    kind: media.kind,
-                                    url: media.url,
-                                    altText: media.altText
-                                )
-                                append(.mediaContent(mediaID, mediaRep), leadingInset: currentLeadingInset)
+                                appendMedia(media, id: "\(textPart.id).media.\(index)")
+                            case let .mermaid(source, rawBlock):
+                                appendMermaid(source, rawBlock: rawBlock, id: "\(textPart.id).mermaid.\(index)")
                             }
                         }
                     case let .file(filePart):

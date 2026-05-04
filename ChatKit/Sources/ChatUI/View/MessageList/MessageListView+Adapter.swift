@@ -25,6 +25,7 @@ private extension MessageListView {
         case toolResultContent
         case chartContent
         case mapContent
+        case mermaidContent
         case interruptionRetry
         case activityReporting
     }
@@ -85,6 +86,7 @@ extension MessageListView: ListViewAdapter {
         case .toolResultContent: RowType.toolResultContent
         case .chartContent: RowType.chartContent
         case .mapContent: RowType.mapContent
+        case .mermaidContent: RowType.mermaidContent
         case .interruptionRetry: RowType.interruptionRetry
         case .activityReporting: RowType.activityReporting
         }
@@ -124,6 +126,8 @@ extension MessageListView: ListViewAdapter {
             ChartMessageView()
         case .mapContent:
             MapMessageView()
+        case .mermaidContent:
+            MermaidMessageView()
         case .interruptionRetry:
             RetryActionView()
         case .activityReporting:
@@ -244,6 +248,8 @@ extension MessageListView: ListViewAdapter {
                 return ChartMessageView.contentHeight(for: chart.spec, containerWidth: contentWidth(for: entry, containerWidth: containerWidth))
             case let .mapContent(_, map):
                 return MapMessageView.contentHeight(for: map.spec, containerWidth: contentWidth(for: entry, containerWidth: containerWidth))
+            case let .mermaidContent(_, mermaid):
+                return MermaidMessageView.contentHeight(for: mermaid.source, containerWidth: contentWidth(for: entry, containerWidth: containerWidth))
             case let .activityReporting(content):
                 let textHeight = boundingSize(with: .greatestFiniteMagnitude, for: NSAttributedString(string: content, attributes: [
                     .font: theme.fonts.body,
@@ -438,6 +444,22 @@ extension MessageListView: ListViewAdapter {
                             image: UIImage(systemName: "doc.on.doc")
                         ) { _ in
                             UIPasteboard.general.string = mapJSON
+                        },
+                    ])
+                }
+            }
+        } else if let mermaidMessageView = rowView as? MermaidMessageView {
+            if case let .mermaidContent(_, mermaid) = entry {
+                mermaidMessageView.theme = theme
+                mermaidMessageView.configure(with: mermaid.source)
+                let mermaidSource = mermaid.rawBlock
+                mermaidMessageView.contextMenuProvider = { _ in
+                    UIMenu(children: [
+                        UIAction(
+                            title: String.localized("Copy"),
+                            image: UIImage(systemName: "doc.on.doc")
+                        ) { _ in
+                            UIPasteboard.general.string = mermaidSource
                         },
                     ])
                 }
