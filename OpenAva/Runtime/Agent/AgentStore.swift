@@ -12,6 +12,8 @@ struct AgentProfile: Equatable, Identifiable {
     var localContextPath: String
     /// Per-agent selected LLM model identifier.
     var selectedModelID: UUID?
+    /// Per-agent reasoning/thinking strength preference.
+    var thinkingStrength: ChatThinkingStrength
     var createdAtMs: Int64
     /// Whether to automatically compact context when nearing the context window limit.
     var autoCompactEnabled: Bool
@@ -65,6 +67,7 @@ struct AgentProfile: Equatable, Identifiable {
         workspacePath: String,
         localContextPath: String,
         selectedModelID: UUID? = nil,
+        thinkingStrength: ChatThinkingStrength = .medium,
         createdAtMs: Int64 = Int64(Date().timeIntervalSince1970 * 1000),
         autoCompactEnabled: Bool = true
     ) {
@@ -74,6 +77,7 @@ struct AgentProfile: Equatable, Identifiable {
         self.workspacePath = workspacePath
         self.localContextPath = localContextPath
         self.selectedModelID = selectedModelID
+        self.thinkingStrength = thinkingStrength
         self.createdAtMs = createdAtMs
         self.autoCompactEnabled = autoCompactEnabled
     }
@@ -82,7 +86,7 @@ struct AgentProfile: Equatable, Identifiable {
 extension AgentProfile: Codable {
     private enum CodingKeys: String, CodingKey {
         case id, name, emoji, workspacePath, localContextPath
-        case selectedModelID, createdAtMs
+        case selectedModelID, thinkingStrength, createdAtMs
         case autoCompactEnabled
     }
 
@@ -94,6 +98,7 @@ extension AgentProfile: Codable {
         workspacePath = try c.decode(String.self, forKey: .workspacePath)
         localContextPath = try c.decode(String.self, forKey: .localContextPath)
         selectedModelID = try c.decodeIfPresent(UUID.self, forKey: .selectedModelID)
+        thinkingStrength = try c.decodeIfPresent(ChatThinkingStrength.self, forKey: .thinkingStrength) ?? .medium
         createdAtMs = try c.decode(Int64.self, forKey: .createdAtMs)
         autoCompactEnabled = try c.decodeIfPresent(Bool.self, forKey: .autoCompactEnabled) ?? true
     }
@@ -519,6 +524,23 @@ enum AgentStore {
     }
 
     @discardableResult
+    static func setThinkingStrength(
+        _ thinkingStrength: ChatThinkingStrength,
+        for agentID: UUID,
+        fileManager: FileManager = .default,
+        workspaceRootURL: URL? = nil
+    ) -> Bool {
+        var state = load(fileManager: fileManager, workspaceRootURL: workspaceRootURL)
+        guard let index = state.agents.firstIndex(where: { $0.id == agentID }) else {
+            return false
+        }
+
+        state.agents[index].thinkingStrength = thinkingStrength
+        persistAgentMetadata(state.agents[index], fileManager: fileManager)
+        return true
+    }
+
+    @discardableResult
     static func setAutoCompact(
         _ enabled: Bool,
         for agentID: UUID,
@@ -603,8 +625,29 @@ enum AgentStore {
 
     private struct AgentMetadata: Codable {
         var selectedModelID: UUID?
+        var thinkingStrength: ChatThinkingStrength
         var createdAtMs: Int64
         var autoCompactEnabled: Bool
+
+        init(
+            selectedModelID: UUID?,
+            thinkingStrength: ChatThinkingStrength = .medium,
+            createdAtMs: Int64,
+            autoCompactEnabled: Bool
+        ) {
+            self.selectedModelID = selectedModelID
+            self.thinkingStrength = thinkingStrength
+            self.createdAtMs = createdAtMs
+            self.autoCompactEnabled = autoCompactEnabled
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            selectedModelID = try container.decodeIfPresent(UUID.self, forKey: .selectedModelID)
+            thinkingStrength = try container.decodeIfPresent(ChatThinkingStrength.self, forKey: .thinkingStrength) ?? .medium
+            createdAtMs = try container.decode(Int64.self, forKey: .createdAtMs)
+            autoCompactEnabled = try container.decodeIfPresent(Bool.self, forKey: .autoCompactEnabled) ?? true
+        }
     }
 
     private static func agentMetadataURL(for agentID: UUID, workspaceRootURL: URL) -> URL {
@@ -623,6 +666,7 @@ enum AgentStore {
     private static func persistAgentMetadata(_ profile: AgentProfile, fileManager: FileManager) {
         let metadata = AgentMetadata(
             selectedModelID: profile.selectedModelID,
+            thinkingStrength: profile.thinkingStrength,
             createdAtMs: profile.createdAtMs,
             autoCompactEnabled: profile.autoCompactEnabled
         )
@@ -674,6 +718,7 @@ enum AgentStore {
                 workspacePath: workspaceRootURL.standardizedFileURL.path,
                 localContextPath: directoryURL.standardizedFileURL.path,
                 selectedModelID: agentMetadata?.selectedModelID,
+                thinkingStrength: agentMetadata?.thinkingStrength ?? .medium,
                 createdAtMs: createdAtMs,
                 autoCompactEnabled: agentMetadata?.autoCompactEnabled ?? true
             )

@@ -3,10 +3,79 @@ import ChatUI
 import Foundation
 import OSLog
 
+/// User-selectable reasoning/thinking strength shown from the chat input model menu.
+enum ChatThinkingStrength: String, CaseIterable, Codable, Identifiable {
+    case low
+    case medium
+    case high
+    case ultra
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .low:
+            return L10n.tr("chat.thinkingStrength.low")
+        case .medium:
+            return L10n.tr("chat.thinkingStrength.medium")
+        case .high:
+            return L10n.tr("chat.thinkingStrength.high")
+        case .ultra:
+            return L10n.tr("chat.thinkingStrength.ultra")
+        }
+    }
+
+    var inputDetailTitle: String {
+        title
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .low:
+            return "brain"
+        case .medium:
+            return "brain.head.profile"
+        case .high:
+            return "sparkles"
+        case .ultra:
+            return "bolt.fill"
+        }
+    }
+
+    var openAIReasoningEffort: String {
+        switch self {
+        case .low:
+            return "low"
+        case .medium:
+            return "medium"
+        case .high, .ultra:
+            return "high"
+        }
+    }
+
+    func anthropicThinkingBudgetTokens(maxOutputTokens: Int) -> Int {
+        let requestedBudget = switch self {
+        case .low:
+            1024
+        case .medium:
+            4096
+        case .high:
+            8192
+        case .ultra:
+            16384
+        }
+        let upperBound = max(1024, maxOutputTokens - 1024)
+        return min(requestedBudget, upperBound)
+    }
+}
+
 /// ChatClient implementation driven by AppConfig.LLMModel.
 /// Runtime delegates network/protocol behavior to ChatKit provider clients.
 open class LLMChatClient: ChatClient, @unchecked Sendable {
     let modelConfig: AppConfig.LLMModel
+    private let thinkingStrength: ChatThinkingStrength
 
     private static let logger = Logger(subsystem: "com.day1-labs.openava", category: "runtime.client.llm")
 
@@ -28,8 +97,9 @@ open class LLMChatClient: ChatClient, @unchecked Sendable {
         delegatedErrorCollector ?? fallbackErrorCollector
     }
 
-    init(modelConfig: AppConfig.LLMModel) {
+    init(modelConfig: AppConfig.LLMModel, thinkingStrength: ChatThinkingStrength = .medium) {
         self.modelConfig = modelConfig
+        self.thinkingStrength = thinkingStrength
         fallbackErrorCollector = ErrorCollector.new()
     }
 
@@ -73,6 +143,10 @@ open class LLMChatClient: ChatClient, @unchecked Sendable {
         switch providerType {
         case .deepseek:
             let client = DeepSeekClient(model: model, apiKey: apiKey)
+            client.requestCustomization = [
+                "thinking": ["type": "enabled"],
+                "reasoning_effort": thinkingStrength.openAIReasoningEffort,
+            ]
             configureOpenAICompatibleEndpoint(client: client, requestURL: requestURL)
             applyAPIKeyHeaderOverride(client: client, apiKey: apiKey, apiKeyHeader: apiKeyHeader)
             return client
@@ -91,7 +165,18 @@ open class LLMChatClient: ChatClient, @unchecked Sendable {
             configureOpenAICompatibleEndpoint(client: client, requestURL: requestURL)
             applyAPIKeyHeaderOverride(client: client, apiKey: apiKey, apiKeyHeader: apiKeyHeader)
             return client
-        case .openai, .custom, .google:
+        case .openai, .custom:
+            let client = OpenAICompatibleClient(
+                model: model,
+                baseURL: requestURL.absoluteString,
+                path: nil,
+                apiKey: apiKey,
+                defaultHeaders: [:],
+                requestCustomization: ["reasoning_effort": thinkingStrength.openAIReasoningEffort]
+            )
+            applyAPIKeyHeaderOverride(client: client, apiKey: apiKey, apiKeyHeader: apiKeyHeader)
+            return client
+        case .google:
             let client = OpenAICompatibleClient(
                 model: model,
                 baseURL: requestURL.absoluteString,
@@ -109,7 +194,7 @@ open class LLMChatClient: ChatClient, @unchecked Sendable {
                 apiKey: apiKey,
                 apiVersion: "2023-06-01",
                 defaultHeaders: [:],
-                thinkingBudgetTokens: 0
+                thinkingBudgetTokens: thinkingStrength.anthropicThinkingBudgetTokens(maxOutputTokens: modelConfig.resolvedMaxOutputTokens)
             )
             applyAnthropicAPIKeyHeaderOverride(client: client, apiKey: apiKey, apiKeyHeader: apiKeyHeader)
             return client

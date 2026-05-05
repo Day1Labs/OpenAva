@@ -302,6 +302,28 @@ open class ChatViewController: UIViewController {
         )
     #endif
 
+    public struct EmptyStateContent: Equatable {
+        public var title: String?
+        public var subtitle: String?
+
+        public init(title: String?, subtitle: String?) {
+            self.title = title
+            self.subtitle = subtitle
+        }
+    }
+
+    /// Explicit empty-state copy shown when the chat has no messages.
+    /// When unset, the controller falls back to a personal greeting.
+    public var emptyStateContent: EmptyStateContent? {
+        didSet { applyEmptyStateContent() }
+    }
+
+    /// Preferred user-facing name for the empty chat greeting.
+    /// Falls back to the current system user name when unset or blank.
+    public var emptyStateUserName: String? {
+        didSet { applyEmptyStateContent() }
+    }
+
     /// When set, the input draft is persisted to UserDefaults under this key so it survives
     /// app restarts. Should be unique per agent to isolate drafts between agents.
     public var draftPersistenceKey: String?
@@ -373,6 +395,19 @@ open class ChatViewController: UIViewController {
         fatalError()
     }
 
+    private func applyEmptyStateContent() {
+        if let emptyStateContent {
+            messageListView.emptyStateTitle = emptyStateContent.title
+            messageListView.emptyStateSubtitle = emptyStateContent.subtitle
+            return
+        }
+
+        let preferredName = emptyStateUserName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let fallbackName = NSUserName().trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = preferredName.isEmpty ? fallbackName : preferredName
+        messageListView.emptyStateTitle = "Hi, \(resolvedName.isEmpty ? "there" : resolvedName)"
+    }
+
     override public func viewDidLoad() {
         super.viewDidLoad()
         view.layoutIfNeeded()
@@ -386,6 +421,7 @@ open class ChatViewController: UIViewController {
         view.addSubview(chatInputView)
         messageListView.addGestureRecognizer(dismissKeyboardTapGesture)
         messageListView.theme = configuration.messageTheme
+        applyEmptyStateContent()
 
         configureSession(for: sessionID)
         chatInputView.delegate = self
@@ -776,6 +812,30 @@ open class ChatViewController: UIViewController {
         scheduleContextUsageRefresh()
     }
 
+    var currentToolPermissionMode: ToolPermissionMode {
+        currentSession?.toolPermissionMode ?? .default
+    }
+
+    func updateToolPermissionMode(_ mode: ToolPermissionMode) {
+        currentSession?.setToolPermissionMode(mode)
+        updateToolPermissionPresentation()
+    }
+
+    private func updateToolPermissionPresentation() {
+        chatInputView.updatePermissionPresentation(toolPermissionPresentation(for: currentToolPermissionMode))
+    }
+
+    private func toolPermissionPresentation(for mode: ToolPermissionMode) -> ChatInputPermissionPresentation {
+        switch mode {
+        case .default:
+            return ChatInputPermissionPresentation(title: L10n.tr("chat.permission.default"), systemImageName: "lock")
+        case .auto:
+            return ChatInputPermissionPresentation(title: L10n.tr("chat.permission.autoReview"), systemImageName: "shield.lefthalf.filled")
+        case .bypassPermissions:
+            return ChatInputPermissionPresentation(title: L10n.tr("chat.permission.fullAccess"), systemImageName: "lock.open")
+        }
+    }
+
     @MainActor
     public func updateConversationRuntime(
         sessionID: String,
@@ -831,6 +891,7 @@ open class ChatViewController: UIViewController {
         let session = providedSession ?? ConversationSessionManager.shared.session(for: id, configuration: sessionConfiguration)
         applyConversationModels(conversationModels, to: session)
         currentSession = session
+        updateToolPermissionPresentation()
         setPromptInputExecuting(session.isQueryActive)
         if resetMessageList {
             messageListView.prepareForNewSession()
@@ -967,6 +1028,14 @@ open class ChatViewController: UIViewController {
             String(format: String.localized("Context %lld%%"), locale: .current, Int64($0.usedPercentage))
         } ?? String.localized("Context --%")
         chatInputView.updateQuickSettingCommand(command: QuickCommand.contextUsage, title: title, icon: "gauge")
+
+        let presentation = snapshot.map { snapshot in
+            ChatInputContextUsagePresentation(
+                usedFraction: min(1, max(0, CGFloat(snapshot.usedPercentage) / 100)),
+                accessibilityLabel: title
+            )
+        }
+        chatInputView.updateContextUsagePresentation(presentation)
     }
 
     private func resetInputState() {

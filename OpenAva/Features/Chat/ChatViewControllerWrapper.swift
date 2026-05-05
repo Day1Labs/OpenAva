@@ -229,6 +229,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     let activeAgentEmoji: String
     let selectedModelName: String
     let selectedProviderName: String
+    let selectedThinkingStrength: ChatThinkingStrength
     /// Non-nil when an App Intent wants to auto-send a message through the real agentic loop.
     /// `pendingAutoSendID` is a unique token so the coordinator never submits the same request twice.
     let pendingAutoSendID: String?
@@ -239,6 +240,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     let onMenuAction: ((MenuAction) -> Void)?
     let onSessionSwitch: ((ActiveSessionContext) -> Void)?
     let onModelSwitch: ((UUID) -> Void)?
+    let onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?
     let projectWorkspaces: [ProjectWorkspaceProfile]
     let activeProjectWorkspaceID: UUID?
     let activeProjectWorkspaceName: String
@@ -279,6 +281,97 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         }
     }
 
+    private var emptyStateContent: ChatViewController.EmptyStateContent {
+        switch activeContext {
+        case .allAgentsTeam:
+            return .init(
+                title: L10n.tr("chat.emptyState.allAgentsTeam.title"),
+                subtitle: L10n.tr("chat.emptyState.team.subtitle")
+            )
+        case .team:
+            return .init(
+                title: L10n.tr("chat.emptyState.team.title", resolvedSessionTitle),
+                subtitle: L10n.tr("chat.emptyState.team.subtitle")
+            )
+        case .agent:
+            return .init(
+                title: L10n.tr("chat.emptyState.agent.title", resolvedEmptyStateUserName),
+                subtitle: L10n.tr("chat.emptyState.agent.subtitle")
+            )
+        }
+    }
+
+    private var resolvedEmptyStateUserName: String {
+        if let callName = activeAgentCallNameFromUserDocument() {
+            return callName
+        }
+
+        let callName = AgentUserDefaults.load(directoryURL: workspaceRootURL)?
+            .callName
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !callName.isEmpty {
+            return callName
+        }
+
+        let systemUserName = NSUserName().trimmingCharacters(in: .whitespacesAndNewlines)
+        return systemUserName.isEmpty ? "there" : systemUserName
+    }
+
+    private func activeAgentCallNameFromUserDocument() -> String? {
+        let prioritizedAgents: [AgentProfile]
+        if let activeAgentID,
+           let activeAgent = agents.first(where: { $0.id == activeAgentID })
+        {
+            prioritizedAgents = [activeAgent] + agents.filter { $0.id != activeAgentID }
+        } else {
+            prioritizedAgents = agents
+        }
+
+        for agent in prioritizedAgents {
+            let userURL = agent.contextURL.appendingPathComponent(AgentContextDocumentKind.user.fileName, isDirectory: false)
+            guard let content = try? String(contentsOf: userURL, encoding: .utf8),
+                  let callName = callName(fromUserDocumentContent: content)
+            else {
+                continue
+            }
+            return callName
+        }
+
+        return nil
+    }
+
+    private func callName(fromUserDocumentContent content: String) -> String? {
+        let lines = content.components(separatedBy: .newlines)
+        guard let markerIndex = lines.firstIndex(where: { line in
+            line.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("- **What to call them:**")
+        }) else {
+            return nil
+        }
+
+        let markerLine = lines[markerIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+        let inlineValue = markerLine
+            .replacingOccurrences(of: "- **What to call them:**", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !inlineValue.isEmpty {
+            return inlineValue
+        }
+
+        var valueLines: [String] = []
+        for line in lines.dropFirst(markerIndex + 1) {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasPrefix("- **") || trimmed.hasPrefix("## ") || trimmed == "---" {
+                break
+            }
+            let value = line.hasPrefix("  ") ? String(line.dropFirst(2)) : trimmed
+            if !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                valueLines.append(value)
+            }
+        }
+
+        let callName = valueLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return callName.isEmpty ? nil : callName
+    }
+
     private var draftPersistenceKey: String? {
         switch activeContext {
         case .allAgentsTeam:
@@ -301,9 +394,11 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             activeAgentEmoji: resolvedSessionEmoji,
             selectedModelName: selectedModelName,
             selectedProviderName: selectedProviderName,
+            selectedThinkingStrength: selectedThinkingStrength,
             autoCompactEnabled: autoCompactEnabled,
             onSessionSwitch: onSessionSwitch,
             onModelSwitch: onModelSwitch,
+            onThinkingStrengthChange: onThinkingStrengthChange,
             projectWorkspaces: projectWorkspaces,
             activeProjectWorkspaceID: activeProjectWorkspaceID,
             activeProjectWorkspaceName: activeProjectWorkspaceName,
@@ -542,6 +637,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         #endif
 
         // Persist input drafts per visible chat context so switching rooms does not leak or lose drafts.
+        chatViewController.emptyStateContent = emptyStateContent
         chatViewController.draftPersistenceKey = draftPersistenceKey
 
         chatViewController.definesPresentationContext = true
@@ -573,6 +669,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             providerName: selectedProviderName,
             teamMemberCount: teamMemberCount
         ))
+        context.coordinator.configureInputControls(on: chatViewController)
 
         return chatViewController
     }
@@ -630,6 +727,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         context.coordinator.activeAgentEmoji = resolvedSessionEmoji
         context.coordinator.selectedModelName = selectedModelName
         context.coordinator.selectedProviderName = selectedProviderName
+        context.coordinator.selectedThinkingStrength = selectedThinkingStrength
         context.coordinator.projectWorkspaces = projectWorkspaces
         context.coordinator.activeProjectWorkspaceID = activeProjectWorkspaceID
         context.coordinator.activeProjectWorkspaceName = activeProjectWorkspaceName
@@ -638,6 +736,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         context.coordinator.onImportWorkspace = onImportWorkspace
         context.coordinator.onCreateWorkspace = onCreateWorkspace
         context.coordinator.onModelSwitch = onModelSwitch
+        context.coordinator.onThinkingStrengthChange = onThinkingStrengthChange
 
         let agentCount = max(agents.count, 1)
         let sessionContext = resolveSessionContext(agentCount: agentCount)
@@ -647,6 +746,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             models: sessionContext.models,
             sessionConfiguration: sessionContext.sessionConfiguration
         )
+        chatViewController.emptyStateContent = emptyStateContent
         chatViewController.draftPersistenceKey = draftPersistenceKey
         applyPromptSubmissionHandler(
             to: chatViewController,
@@ -706,6 +806,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             providerName: selectedProviderName,
             teamMemberCount: teamMemberCount
         ))
+        context.coordinator.configureInputControls(on: chatViewController)
     }
 }
 
@@ -722,6 +823,7 @@ extension ChatViewControllerWrapper {
         var activeAgentEmoji: String
         var selectedModelName: String
         var selectedProviderName: String
+        var selectedThinkingStrength: ChatThinkingStrength
         var projectWorkspaces: [ProjectWorkspaceProfile]
         var activeProjectWorkspaceID: UUID?
         var activeProjectWorkspaceName: String
@@ -731,6 +833,7 @@ extension ChatViewControllerWrapper {
         var onCreateWorkspace: (() -> Void)?
         var onSessionSwitch: ((ActiveSessionContext) -> Void)?
         var onModelSwitch: ((UUID) -> Void)?
+        var onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?
         var onCreateLocalAgent: (() -> Void)?
         var onDeleteCurrentAgent: (() -> Void)?
         var onRenameCurrentAgent: ((String) -> Bool)?
@@ -748,9 +851,11 @@ extension ChatViewControllerWrapper {
             activeAgentEmoji: String,
             selectedModelName: String,
             selectedProviderName: String,
+            selectedThinkingStrength: ChatThinkingStrength,
             autoCompactEnabled: Bool,
             onSessionSwitch: ((ActiveSessionContext) -> Void)?,
             onModelSwitch: ((UUID) -> Void)?,
+            onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?,
             projectWorkspaces: [ProjectWorkspaceProfile],
             activeProjectWorkspaceID: UUID?,
             activeProjectWorkspaceName: String,
@@ -772,6 +877,7 @@ extension ChatViewControllerWrapper {
             self.activeAgentEmoji = activeAgentEmoji
             self.selectedModelName = selectedModelName
             self.selectedProviderName = selectedProviderName
+            self.selectedThinkingStrength = selectedThinkingStrength
             self.autoCompactEnabled = autoCompactEnabled
             self.projectWorkspaces = projectWorkspaces
             self.activeProjectWorkspaceID = activeProjectWorkspaceID
@@ -782,6 +888,7 @@ extension ChatViewControllerWrapper {
             self.onCreateWorkspace = onCreateWorkspace
             self.onSessionSwitch = onSessionSwitch
             self.onModelSwitch = onModelSwitch
+            self.onThinkingStrengthChange = onThinkingStrengthChange
             self.onCreateLocalAgent = onCreateLocalAgent
             self.onDeleteCurrentAgent = onDeleteCurrentAgent
             self.onRenameCurrentAgent = onRenameCurrentAgent
@@ -794,7 +901,39 @@ extension ChatViewControllerWrapper {
             return false
         }
 
-        func chatViewControllerModelMenu(_: ChatViewController) -> UIMenu? {
+        func configureInputControls(on controller: ChatViewController) {
+            controller.chatInputView.permissionButtonMenu = makeToolPermissionMenu(for: controller)
+            controller.chatInputView.selectedModelDetail = selectedThinkingStrength.inputDetailTitle
+            controller.chatInputView.contextUsageTapAction = { [weak self, weak controller] in
+                guard let self, let controller else { return }
+                Task { @MainActor in
+                    await self.presentContextUsagePanel(from: controller)
+                }
+            }
+        }
+
+        private func makeToolPermissionMenu(for controller: ChatViewController) -> UIMenu {
+            let currentMode = controller.currentToolPermissionMode
+            let options: [(ToolPermissionMode, String, String)] = [
+                (.default, L10n.tr("chat.permission.default"), "lock"),
+                (.auto, L10n.tr("chat.permission.autoReview"), "shield.lefthalf.filled"),
+                (.bypassPermissions, L10n.tr("chat.permission.fullAccess"), "lock.open"),
+            ]
+            let actions = options.map { mode, title, systemImageName in
+                UIAction(
+                    title: title,
+                    image: UIImage(systemName: systemImageName),
+                    state: mode == currentMode ? .on : .off
+                ) { [weak self, weak controller] _ in
+                    guard let self, let controller else { return }
+                    controller.updateToolPermissionMode(mode)
+                    self.configureInputControls(on: controller)
+                }
+            }
+            return UIMenu(title: L10n.tr("chat.permission.title"), options: .displayInline, children: actions)
+        }
+
+        func chatViewControllerModelMenu(_ controller: ChatViewController) -> UIMenu? {
             let collection = LLMConfigStore.loadCollection()
             let models = collection.models
 
@@ -813,14 +952,29 @@ extension ChatViewControllerWrapper {
                 actions.append(emptyAction)
             }
 
+            let thinkingActions = ChatThinkingStrength.allCases.map { strength in
+                UIAction(
+                    title: strength.title,
+                    image: UIImage(systemName: strength.systemImageName),
+                    state: strength == selectedThinkingStrength ? .on : .off
+                ) { [weak self, weak controller] _ in
+                    guard let self, let controller else { return }
+                    self.selectedThinkingStrength = strength
+                    controller.chatInputView.selectedModelDetail = strength.inputDetailTitle
+                    self.onThinkingStrengthChange?(strength)
+                    controller.refreshNavigationMenus()
+                }
+            }
+
             let addModelAction = UIAction(title: L10n.tr("settings.llmList.addModel"), image: UIImage(systemName: "plus")) { [weak self] _ in
                 self?.onMenuAction?(.openLLM)
             }
 
-            let section1 = UIMenu(options: .displayInline, children: actions)
-            let section2 = UIMenu(options: .displayInline, children: [addModelAction])
+            let modelSection = UIMenu(options: .displayInline, children: actions)
+            let thinkingSection = UIMenu(title: L10n.tr("chat.thinkingStrength.title"), children: thinkingActions)
+            let managementSection = UIMenu(options: .displayInline, children: [addModelAction])
 
-            return UIMenu(children: [section1, section2])
+            return UIMenu(children: [modelSection, thinkingSection, managementSection])
         }
 
         func chatViewControllerMenu(_ controller: ChatViewController) -> UIMenu? {
@@ -1004,7 +1158,7 @@ extension ChatViewControllerWrapper {
 
             let model = selectedModelName.trimmingCharacters(in: .whitespacesAndNewlines)
             let provider = selectedProviderName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let anchorView: UIView = controller.quickSettingAnchorView(forCommand: QuickCommand.context) ?? controller.view
+            let anchorView: UIView = controller.chatInputView.contextUsageAnchorView
             let overlayController = ContextUsagePanelOverlayController(
                 snapshot: snapshot,
                 modelName: model,

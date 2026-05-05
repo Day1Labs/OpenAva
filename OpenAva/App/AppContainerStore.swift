@@ -154,6 +154,25 @@ final class AppContainerStore {
         rebuildContainer(with: config)
     }
 
+    func selectThinkingStrength(_ thinkingStrength: ChatThinkingStrength) {
+        var config = container.config
+        config.agent.thinkingStrength = thinkingStrength
+
+        // Persist agent-scoped selection when an active agent exists.
+        if let activeAgentID = activeAgent?.id {
+            _ = AgentStore.setThinkingStrength(
+                thinkingStrength,
+                for: activeAgentID,
+                fileManager: fileManager,
+                workspaceRootURL: agentWorkspaceRootURL
+            )
+            // `rebuildContainer` reapplies active-agent preferences from `agentState`.
+            // Refresh it first so the new thinking strength is not overwritten by stale state.
+            agentState = AgentStore.load(fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
+        }
+        rebuildContainer(with: config)
+    }
+
     /// Save a single model and rebuild the container from the persisted collection.
     func saveLLMModel(_ model: AppConfig.LLMModel) {
         LLMConfigStore.saveModel(model)
@@ -200,9 +219,15 @@ final class AppContainerStore {
             fileManager: fileManager,
             workspaceRootURL: agentWorkspaceRootURL
         )
-        // Seed new agent with the current model as its initial preference.
+        // Seed new agent with the current model and thinking strength as its initial preferences.
         _ = AgentStore.setSelectedModel(
             container.config.selectedLLMModelID,
+            for: profile.id,
+            fileManager: fileManager,
+            workspaceRootURL: agentWorkspaceRootURL
+        )
+        _ = AgentStore.setThinkingStrength(
+            container.config.agent.thinkingStrength,
             for: profile.id,
             fileManager: fileManager,
             workspaceRootURL: agentWorkspaceRootURL
@@ -246,6 +271,12 @@ final class AppContainerStore {
                 )
                 _ = AgentStore.setSelectedModel(
                     container.config.selectedLLMModelID,
+                    for: profile.id,
+                    fileManager: fileManager,
+                    workspaceRootURL: agentWorkspaceRootURL
+                )
+                _ = AgentStore.setThinkingStrength(
+                    container.config.agent.thinkingStrength,
                     for: profile.id,
                     fileManager: fileManager,
                     workspaceRootURL: agentWorkspaceRootURL
@@ -493,6 +524,7 @@ final class AppContainerStore {
                 name: "Agent",
                 emoji: "🤖",
                 selectedLLMModelID: config.agent.selectedLLMModelID,
+                thinkingStrength: config.agent.thinkingStrength,
                 workspaceRootURL: workspaceRootURL,
                 supportRootURL: supportRootURL(workspaceRootURL: workspaceRootURL)
             )
@@ -510,6 +542,7 @@ final class AppContainerStore {
             name: activeAgent.name,
             emoji: activeAgent.emoji,
             selectedLLMModelID: resolvedSelectedModelID,
+            thinkingStrength: activeAgent.thinkingStrength,
             workspaceRootURL: activeAgent.workspaceURL,
             supportRootURL: activeAgent.contextURL
         )

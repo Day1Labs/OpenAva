@@ -406,7 +406,7 @@ final class TeamRoomOrchestrator {
         modelConfig: AppConfig.LLMModel
     ) -> ConversationSession.Model {
         ConversationSession.Model(
-            client: LLMChatClient(modelConfig: modelConfig),
+            client: LLMChatClient(modelConfig: modelConfig, thinkingStrength: agent.thinkingStrength),
             capabilities: [.visual, .tool],
             contextLength: modelConfig.contextTokens,
             maxOutputTokens: modelConfig.resolvedMaxOutputTokens,

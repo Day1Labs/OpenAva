@@ -262,6 +262,15 @@
 "chat.activeAgent.fallbackName" = "助手";
 "chat.activeTeam.fallbackName" = "团队";
 "chat.selectedModel.notSelected" = "未选择";
+"chat.permission.title" = "权限";
+"chat.permission.default" = "默认";
+"chat.permission.autoReview" = "自动审核";
+"chat.permission.fullAccess" = "完全访问";
+"chat.thinkingStrength.title" = "思考强度";
+"chat.thinkingStrength.low" = "低";
+"chat.thinkingStrength.medium" = "中";
+"chat.thinkingStrength.high" = "高";
+"chat.thinkingStrength.ultra" = "超高";
 "chat.command.runHeartbeatNow" = "运行一次心跳";
 "chat.command.focusInput" = "聚焦输入框";
 "chat.command.compact" = "压缩";
@@ -309,6 +318,11 @@
 "chat.contextUsage.manualCompact" = "手动压缩";
 "chat.contextUsage.trigger.manual" = "手动";
 "chat.contextUsage.trigger.auto" = "自动";
+"chat.emptyState.agent.title" = "Hi, %@";
+"chat.emptyState.agent.subtitle" = "你可以提问、运行技能，或唤起这个 Agent。";
+"chat.emptyState.allAgentsTeam.title" = "全员团队已就绪";
+"chat.emptyState.team.title" = "%@ 已就绪";
+"chat.emptyState.team.subtitle" = "发起讨论、分配任务，或让多个 Agent 一起协作。";
 "chat.quickSkill.prompt" = "请使用技能 \"%@\" 处理当前任务。如果信息不足，请先提一个最关键的澄清问题。";
 "chat.menu.autoCompact" = "自动压缩";
 "chat.menu.renameAgent" = "重命名";

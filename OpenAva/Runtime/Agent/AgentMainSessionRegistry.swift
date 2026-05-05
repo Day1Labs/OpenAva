@@ -19,6 +19,7 @@ final class AgentMainSessionRegistry {
         let modelID: UUID?
         let modelName: String
         let providerName: String
+        let thinkingStrength: ChatThinkingStrength
         let agentCount: Int
         let workspacePath: String
         let supportPath: String
@@ -90,6 +91,7 @@ final class AgentMainSessionRegistry {
             modelID: modelConfig.id,
             modelName: modelConfig.model ?? "",
             providerName: modelConfig.provider,
+            thinkingStrength: agent.thinkingStrength,
             agentCount: normalizedAgentCount,
             workspacePath: agent.workspaceURL.standardizedFileURL.path,
             supportPath: agent.contextURL.standardizedFileURL.path,
@@ -127,6 +129,7 @@ final class AgentMainSessionRegistry {
             modelID: modelConfig.id,
             modelName: modelConfig.model ?? "",
             providerName: modelConfig.provider,
+            thinkingStrength: agent.thinkingStrength,
             agentCount: normalizedAgentCount,
             workspacePath: agent.workspaceURL.standardizedFileURL.path,
             supportPath: agent.contextURL.standardizedFileURL.path,
@@ -178,7 +181,7 @@ final class AgentMainSessionRegistry {
         )
         session.models = ConversationSession.Models(
             chat: ConversationSession.Model(
-                client: LLMChatClient(modelConfig: modelConfig),
+                client: LLMChatClient(modelConfig: modelConfig, thinkingStrength: agent.thinkingStrength),
                 capabilities: [.visual, .tool],
                 contextLength: modelConfig.contextTokens,
                 maxOutputTokens: modelConfig.resolvedMaxOutputTokens,

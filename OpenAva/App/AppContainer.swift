@@ -44,7 +44,10 @@ struct AppContainer {
             else {
                 return nil
             }
-            return LLMChatClient(modelConfig: modelConfig)
+            return LLMChatClient(
+                modelConfig: modelConfig,
+                thinkingStrength: config.agent.thinkingStrength
+            )
         }()
 
         return Services(

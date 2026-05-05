@@ -228,6 +228,7 @@ struct ChatRootView: View {
             activeAgentEmoji: currentActiveAgentEmoji,
             selectedModelName: currentSelectedModelName,
             selectedProviderName: resolveSelectedProviderName(),
+            selectedThinkingStrength: containerStore.container.config.agent.thinkingStrength,
             pendingAutoSendID: pendingAutoSendID,
             pendingAutoSendMessage: pendingAutoSendMessage,
             menuRefreshToken: menuRefreshToken,
@@ -235,6 +236,7 @@ struct ChatRootView: View {
             onMenuAction: handleMenuAction,
             onSessionSwitch: handleSessionSwitch,
             onModelSwitch: handleModelSwitch,
+            onThinkingStrengthChange: handleThinkingStrengthChange,
             onWorkspaceSwitch: handleWorkspaceSwitch,
             onOpenWorkspaceDirectory: openActiveWorkspaceDirectory,
             onImportWorkspace: openWorkspaceImporter,
@@ -330,6 +332,10 @@ struct ChatRootView: View {
 
     private func handleModelSwitch(_ modelID: UUID) {
         containerStore.selectLLMModel(id: modelID)
+    }
+
+    private func handleThinkingStrengthChange(_ thinkingStrength: ChatThinkingStrength) {
+        containerStore.selectThinkingStrength(thinkingStrength)
     }
 
     private func handleWorkspaceSwitch(_ workspaceID: UUID) {
@@ -648,6 +654,7 @@ private struct ChatScreen: View {
     private let activeAgentEmoji: String
     private let selectedModelName: String
     private let selectedProviderName: String
+    private let selectedThinkingStrength: ChatThinkingStrength
     private let pendingAutoSendID: String?
     private let pendingAutoSendMessage: String?
     private let menuRefreshToken: Int
@@ -655,6 +662,7 @@ private struct ChatScreen: View {
     private let onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)?
     private let onSessionSwitch: ((ActiveSessionContext) -> Void)?
     private let onModelSwitch: ((UUID) -> Void)?
+    private let onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?
     private let onWorkspaceSwitch: ((UUID) -> Void)?
     private let onOpenWorkspaceDirectory: (() -> Void)?
     private let onImportWorkspace: ((UIViewController?) -> Void)?
@@ -684,6 +692,7 @@ private struct ChatScreen: View {
         activeAgentEmoji: String,
         selectedModelName: String,
         selectedProviderName: String,
+        selectedThinkingStrength: ChatThinkingStrength = .medium,
         pendingAutoSendID: String? = nil,
         pendingAutoSendMessage: String? = nil,
         menuRefreshToken: Int = 0,
@@ -691,6 +700,7 @@ private struct ChatScreen: View {
         onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)? = nil,
         onSessionSwitch: ((ActiveSessionContext) -> Void)? = nil,
         onModelSwitch: ((UUID) -> Void)? = nil,
+        onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)? = nil,
         onWorkspaceSwitch: ((UUID) -> Void)? = nil,
         onOpenWorkspaceDirectory: (() -> Void)? = nil,
         onImportWorkspace: ((UIViewController?) -> Void)? = nil,
@@ -716,6 +726,7 @@ private struct ChatScreen: View {
         self.activeAgentEmoji = activeAgentEmoji
         self.selectedModelName = selectedModelName
         self.selectedProviderName = selectedProviderName
+        self.selectedThinkingStrength = selectedThinkingStrength
         self.pendingAutoSendID = pendingAutoSendID
         self.pendingAutoSendMessage = pendingAutoSendMessage
         self.menuRefreshToken = menuRefreshToken
@@ -723,6 +734,7 @@ private struct ChatScreen: View {
         self.onMenuAction = onMenuAction
         self.onSessionSwitch = onSessionSwitch
         self.onModelSwitch = onModelSwitch
+        self.onThinkingStrengthChange = onThinkingStrengthChange
         self.onWorkspaceSwitch = onWorkspaceSwitch
         self.onOpenWorkspaceDirectory = onOpenWorkspaceDirectory
         self.onImportWorkspace = onImportWorkspace
@@ -1045,6 +1057,7 @@ private struct ChatScreen: View {
             activeAgentEmoji: activeAgentEmoji,
             selectedModelName: selectedModelName,
             selectedProviderName: selectedProviderName,
+            selectedThinkingStrength: selectedThinkingStrength,
             pendingAutoSendID: pendingAutoSendID,
             pendingAutoSendMessage: pendingAutoSendMessage,
             menuRefreshToken: menuRefreshToken,
@@ -1052,6 +1065,7 @@ private struct ChatScreen: View {
             onMenuAction: onMenuAction,
             onSessionSwitch: onSessionSwitch,
             onModelSwitch: onModelSwitch,
+            onThinkingStrengthChange: onThinkingStrengthChange,
             projectWorkspaces: projectWorkspaces,
             activeProjectWorkspaceID: activeProjectWorkspaceID,
             activeProjectWorkspaceName: activeProjectWorkspaceName,

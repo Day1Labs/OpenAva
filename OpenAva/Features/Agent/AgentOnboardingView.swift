@@ -77,6 +77,12 @@ struct AgentOnboardingView: View {
         }
     }
 
+    private func updatePointingHandCursor(isHovered: Bool) {
+        #if targetEnvironment(macCatalyst)
+            if isHovered { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+        #endif
+    }
+
     private func handleWorkspaceImport(_ result: Result<[URL], Error>) {
         do {
             guard let url = try result.get().first else { return }
@@ -171,7 +177,7 @@ struct AgentOnboardingView: View {
                         }
                         .buttonStyle(.plain)
                         .onHover { isHovered in
-                            if isHovered { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                            updatePointingHandCursor(isHovered: isHovered)
                         }
 
                         Button {
@@ -203,7 +209,7 @@ struct AgentOnboardingView: View {
                         }
                         .buttonStyle(.plain)
                         .onHover { isHovered in
-                            if isHovered { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                            updatePointingHandCursor(isHovered: isHovered)
                         }
                     }
                     .padding(.bottom, 8)
@@ -225,7 +231,7 @@ struct AgentOnboardingView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 24)
                     .onHover { isHovered in
-                        if isHovered { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        updatePointingHandCursor(isHovered: isHovered)
                     }
                 }
                 .background(
@@ -285,11 +291,7 @@ struct AgentOnboardingView: View {
                     }
                     .buttonStyle(.plain)
                     .onHover { isHovered in
-                        if isHovered {
-                            NSCursor.pointingHand.push()
-                        } else {
-                            NSCursor.pop()
-                        }
+                        updatePointingHandCursor(isHovered: isHovered)
                     }
                 }
             }

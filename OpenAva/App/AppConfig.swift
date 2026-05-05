@@ -10,6 +10,7 @@ struct AppConfig {
         var name: String
         var emoji: String
         var selectedLLMModelID: UUID?
+        var thinkingStrength: ChatThinkingStrength
         var workspaceRootURL: URL?
         var supportRootURL: URL?
     }
@@ -137,6 +138,7 @@ struct AppConfig {
                 name: "Agent",
                 emoji: "🤖",
                 selectedLLMModelID: nil,
+                thinkingStrength: .medium,
                 workspaceRootURL: nil,
                 supportRootURL: nil
             )
