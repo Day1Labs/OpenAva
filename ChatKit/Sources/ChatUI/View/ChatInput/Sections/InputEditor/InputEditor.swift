@@ -16,7 +16,36 @@ final class InputEditor: EditorSectionView {
     let elementClipper = UIView()
 
     let bossButton = IconButton(icon: "plus")
-    let contextButton = IconButton(icon: "gauge")
+    let permissionButton: UIButton = {
+        let button = UIButton(type: .custom)
+        #if targetEnvironment(macCatalyst)
+            if #available(macCatalyst 15.0, *) {
+                button.preferredBehavioralStyle = .pad
+            }
+        #endif
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
+        button.tintColor = ChatUIDesign.Color.black60
+        button.backgroundColor = ChatUIDesign.Color.black60.withAlphaComponent(0.08)
+        button.layer.cornerRadius = 14
+        button.layer.cornerCurve = .continuous
+        button.clipsToBounds = true
+        if #available(iOS 15.0, *) {
+            var configuration = UIButton.Configuration.plain()
+            configuration.imagePlacement = .leading
+            configuration.imagePadding = 6
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 10, bottom: 4, trailing: 10)
+            configuration.baseForegroundColor = ChatUIDesign.Color.black60
+            button.configuration = configuration
+        } else {
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
+            button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -2, bottom: 0, right: 4)
+        }
+        button.showsMenuAsPrimaryAction = true
+        return button
+    }()
+
+    let contextButton = ContextUsageButton(icon: "gauge")
     let modelButton: UIButton = {
         let button = UIButton(type: .custom)
         #if targetEnvironment(macCatalyst)
@@ -28,15 +57,26 @@ final class InputEditor: EditorSectionView {
         let chevronImage = UIImage(systemName: "chevron.down", withConfiguration: config)
         button.setImage(chevronImage, for: .normal)
 
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+        button.titleLabel?.numberOfLines = 1
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
+        button.titleLabel?.adjustsFontSizeToFitWidth = false
+        button.backgroundColor = ChatUIDesign.Color.black60.withAlphaComponent(0.07)
+        button.layer.cornerRadius = 14
+        button.layer.cornerCurve = .continuous
+        button.clipsToBounds = true
 
         if #available(iOS 15.0, *) {
             var configuration = UIButton.Configuration.plain()
             configuration.imagePlacement = .trailing
             configuration.imagePadding = 4
-            configuration.contentInsets = .zero
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 10, bottom: 4, trailing: 8)
+            configuration.baseForegroundColor = ChatUIDesign.Color.black80
+            configuration.image = chevronImage?.withTintColor(ChatUIDesign.Color.black50, renderingMode: .alwaysOriginal)
+            configuration.titleLineBreakMode = .byTruncatingTail
             button.configuration = configuration
         } else {
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 8)
             button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 0)
         }
 
@@ -107,6 +147,7 @@ final class InputEditor: EditorSectionView {
         addSubview(elementClipper)
         elementClipper.clipsToBounds = true
         elementClipper.addSubview(bossButton)
+        elementClipper.addSubview(permissionButton)
 
         contextButton.tapAction = { [weak self] in
             self?.delegate?.onInputEditorContextButtonTapped()
@@ -117,6 +158,7 @@ final class InputEditor: EditorSectionView {
         let secondaryColor = ChatUIDesign.Color.black60
         bossButton.imageView.tintColor = secondaryColor
         contextButton.imageView.tintColor = secondaryColor
+        permissionButton.tintColor = secondaryColor
         modelButton.tintColor = secondaryColor
         voiceButton.imageView.tintColor = secondaryColor
 
@@ -244,6 +286,98 @@ final class InputEditor: EditorSectionView {
         }
 
         updatePlaceholderAlpha()
+    }
+
+    func setModelTitle(_ title: String?, detail: String? = nil) {
+        let modelTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let detailTitle = detail?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayTitle = [modelTitle, detailTitle]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        if #available(iOS 15.0, *) {
+            var configuration = modelButton.configuration ?? .plain()
+            let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+            configuration.image = UIImage(systemName: "chevron.down", withConfiguration: config)?
+                .withTintColor(ChatUIDesign.Color.black50, renderingMode: .alwaysOriginal)
+            configuration.title = nil
+            configuration.attributedTitle = modelButtonAttributedTitle(modelTitle: modelTitle, detailTitle: detailTitle)
+            configuration.titleLineBreakMode = .byTruncatingTail
+            configuration.baseForegroundColor = ChatUIDesign.Color.black80
+            modelButton.configuration = configuration
+        } else {
+            modelButton.setAttributedTitle(modelButtonNSAttributedTitle(modelTitle: modelTitle, detailTitle: detailTitle), for: .normal)
+        }
+        modelButton.titleLabel?.numberOfLines = 1
+        modelButton.titleLabel?.lineBreakMode = .byTruncatingTail
+        modelButton.accessibilityLabel = displayTitle.isEmpty ? nil : displayTitle
+        modelButton.sizeToFit()
+        setNeedsLayout()
+    }
+
+    @available(iOS 15.0, *)
+    private func modelButtonAttributedTitle(modelTitle: String?, detailTitle: String?) -> AttributedString? {
+        var result = AttributedString()
+        if let modelTitle, !modelTitle.isEmpty {
+            var model = AttributedString(modelTitle)
+            model.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+            model.foregroundColor = ChatUIDesign.Color.black80
+            result += model
+        }
+        if let detailTitle, !detailTitle.isEmpty {
+            if !result.characters.isEmpty {
+                result += AttributedString(" ")
+            }
+            var detail = AttributedString(detailTitle)
+            detail.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+            detail.foregroundColor = ChatUIDesign.Color.black50
+            result += detail
+        }
+        return result.characters.isEmpty ? nil : result
+    }
+
+    private func modelButtonNSAttributedTitle(modelTitle: String?, detailTitle: String?) -> NSAttributedString? {
+        let result = NSMutableAttributedString()
+        if let modelTitle, !modelTitle.isEmpty {
+            result.append(NSAttributedString(
+                string: modelTitle,
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+                    .foregroundColor: ChatUIDesign.Color.black80,
+                ]
+            ))
+        }
+        if let detailTitle, !detailTitle.isEmpty {
+            if result.length > 0 {
+                result.append(NSAttributedString(string: " "))
+            }
+            result.append(NSAttributedString(
+                string: detailTitle,
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+                    .foregroundColor: ChatUIDesign.Color.black50,
+                ]
+            ))
+        }
+        return result.length == 0 ? nil : result
+    }
+
+    func setPermissionTitle(_ title: String?, systemImageName: String?) {
+        let image = systemImageName.flatMap { UIImage(systemName: $0)?.withRenderingMode(.alwaysTemplate) }
+        if #available(iOS 15.0, *) {
+            var configuration = permissionButton.configuration ?? .plain()
+            configuration.title = title
+            configuration.image = image
+            permissionButton.configuration = configuration
+        } else {
+            permissionButton.setTitle(title, for: .normal)
+            permissionButton.setImage(image, for: .normal)
+        }
+        permissionButton.accessibilityLabel = title
+        permissionButton.isHidden = title?.isEmpty ?? true
+        permissionButton.sizeToFit()
+        setNeedsLayout()
     }
 
     func set(text: String) {

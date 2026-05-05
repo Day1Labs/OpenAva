@@ -21,6 +21,10 @@ extension ChatInputView: InputEditor.Delegate {
     }
 
     func onInputEditorContextButtonTapped() {
+        if let contextUsageTapAction {
+            contextUsageTapAction()
+            return
+        }
         // Trigger the context usage command usually from QuickSettingBar
         delegate?.chatInputDidTriggerCommand(self, command: "/context")
     }

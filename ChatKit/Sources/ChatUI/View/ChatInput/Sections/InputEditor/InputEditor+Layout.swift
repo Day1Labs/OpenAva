@@ -26,6 +26,7 @@ extension InputEditor {
         var newStatus = layoutStatus
 
         bossButton.transform = .identity
+        permissionButton.transform = .identity
         moreButton.transform = .identity
         sendButton.transform = .identity
         voiceButton.transform = .identity
@@ -80,28 +81,8 @@ extension InputEditor {
 
         let sendBottomY = bounds.height - inset.bottom - sendButtonSize.height
         let iconBottomY = bounds.height - inset.bottom - iconSize.height - (sendButtonSize.height - iconSize.height) / 2
-
-        bossButton.frame = CGRect(
-            x: inset.left,
-            y: iconBottomY,
-            width: iconSize.width,
-            height: iconSize.height
-        )
-
-        contextButton.frame = CGRect(
-            x: bossButton.frame.maxX + iconSpacing,
-            y: iconBottomY,
-            width: iconSize.width,
-            height: iconSize.height
-        )
-
-        let modelButtonSize = modelButton.sizeThatFits(CGSize(width: bounds.width, height: iconSize.height))
-        modelButton.frame = CGRect(
-            x: contextButton.frame.maxX + iconSpacing,
-            y: iconBottomY - (modelButtonSize.height - iconSize.height) / 2,
-            width: modelButtonSize.width,
-            height: modelButtonSize.height
-        )
+        let pillHeight: CGFloat = 28
+        let compactSpacing: CGFloat = 10
 
         sendButton.frame = CGRect(
             x: bounds.width - inset.right - sendButtonSize.width,
@@ -111,11 +92,46 @@ extension InputEditor {
         )
 
         voiceButton.frame = CGRect(
-            x: sendButton.frame.minX - iconSize.width - iconSpacing,
+            x: sendButton.frame.minX - iconSize.width - compactSpacing,
             y: iconBottomY,
             width: iconSize.width,
             height: iconSize.height
         )
+
+        let rawModelSize = modelButton.sizeThatFits(CGSize(width: bounds.width, height: pillHeight))
+        let maxModelWidth = max(72, min(rawModelSize.width, bounds.width * 0.26))
+        modelButton.frame = CGRect(
+            x: voiceButton.frame.minX - maxModelWidth - compactSpacing,
+            y: iconBottomY - (pillHeight - iconSize.height) / 2,
+            width: maxModelWidth,
+            height: pillHeight
+        )
+
+        contextButton.frame = CGRect(
+            x: modelButton.frame.minX - iconSize.width - compactSpacing,
+            y: iconBottomY,
+            width: iconSize.width,
+            height: iconSize.height
+        )
+
+        bossButton.frame = CGRect(
+            x: inset.left,
+            y: iconBottomY,
+            width: iconSize.width,
+            height: iconSize.height
+        )
+
+        let permissionAvailableWidth = max(0, contextButton.frame.minX - bossButton.frame.maxX - compactSpacing * 2)
+        let rawPermissionSize = permissionButton.sizeThatFits(CGSize(width: bounds.width, height: pillHeight))
+        let permissionWidth = min(rawPermissionSize.width, permissionAvailableWidth)
+        permissionButton.frame = CGRect(
+            x: bossButton.frame.maxX + compactSpacing,
+            y: iconBottomY - (pillHeight - iconSize.height) / 2,
+            width: permissionWidth,
+            height: pillHeight
+        )
+        let permissionTitle = permissionButton.currentTitle ?? permissionButton.configuration?.title
+        permissionButton.isHidden = permissionWidth < 44 || (permissionTitle?.isEmpty ?? true)
 
         stopVoiceButton.frame = sendButton.frame
         cancelVoiceButton.frame = voiceButton.frame
@@ -140,6 +156,7 @@ extension InputEditor {
 
         voiceButton.alpha = 1
         bossButton.alpha = 1
+        permissionButton.alpha = 1
         contextButton.alpha = 1
         modelButton.alpha = 1
         moreButton.alpha = 0
@@ -156,6 +173,7 @@ extension InputEditor {
         sendButton.alpha = 0.3
         voiceButton.alpha = 1
         bossButton.alpha = 1
+        permissionButton.alpha = 1
         contextButton.alpha = 1
         modelButton.alpha = 1
         moreButton.alpha = 0
@@ -172,6 +190,7 @@ extension InputEditor {
         sendButton.alpha = 0.3
         voiceButton.alpha = 1
         bossButton.alpha = 1
+        permissionButton.alpha = 1
         contextButton.alpha = 1
         modelButton.alpha = 1
         moreButton.alpha = 0
@@ -217,6 +236,7 @@ extension InputEditor {
         sendButton.alpha = 0
         voiceButton.alpha = 0
         bossButton.alpha = 0
+        permissionButton.alpha = 0
         contextButton.alpha = 0
         modelButton.alpha = 0
         moreButton.alpha = 0
@@ -233,6 +253,7 @@ extension InputEditor {
         sendButton.alpha = 1
         voiceButton.alpha = 0.3
         bossButton.alpha = 0.3
+        permissionButton.alpha = 0.3
         contextButton.alpha = 0.3
         modelButton.alpha = 0.3
         moreButton.alpha = 0

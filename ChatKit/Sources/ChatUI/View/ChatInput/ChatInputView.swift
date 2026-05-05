@@ -52,38 +52,46 @@ open class ChatInputView: EditorSectionView {
     let attachmentSeprator = UIView()
     let controlPanelSeparator = UIView()
     public var selectedModelName: String? {
-        didSet {
-            guard let selectedModelName else {
-                inputEditor.modelButton.setTitle(nil, for: .normal)
-                if #available(iOS 15.0, *) {
-                    var configuration = inputEditor.modelButton.configuration ?? .plain()
-                    configuration.title = nil
-                    inputEditor.modelButton.configuration = configuration
-                }
-                inputEditor.setNeedsLayout()
-                return
-            }
+        didSet { updateModelButtonTitle() }
+    }
 
-            // On iOS/macCatalyst, button size changes require explicit layout passes
-            UIView.performWithoutAnimation {
-                inputEditor.modelButton.setTitle(selectedModelName, for: .normal)
-                if #available(iOS 15.0, *) {
-                    var configuration = inputEditor.modelButton.configuration ?? .plain()
-                    configuration.title = selectedModelName
-                    inputEditor.modelButton.configuration = configuration
-                }
+    public var selectedModelDetail: String? {
+        didSet { updateModelButtonTitle() }
+    }
 
-                // Force size to update immediately
-                inputEditor.modelButton.sizeToFit()
-                inputEditor.setNeedsLayout()
-                inputEditor.layoutIfNeeded()
-            }
+    private func updateModelButtonTitle() {
+        let modelTitle = selectedModelName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let detailTitle = selectedModelDetail?.trimmingCharacters(in: .whitespacesAndNewlines)
+        UIView.performWithoutAnimation {
+            inputEditor.setModelTitle(modelTitle, detail: detailTitle)
+            inputEditor.layoutIfNeeded()
         }
     }
 
     public var modelButtonMenu: UIMenu? {
         get { inputEditor.modelButton.menu }
         set { inputEditor.modelButton.menu = newValue }
+    }
+
+    public var permissionButtonMenu: UIMenu? {
+        get { inputEditor.permissionButton.menu }
+        set { inputEditor.permissionButton.menu = newValue }
+    }
+
+    public var contextUsageAnchorView: UIView {
+        inputEditor.contextButton
+    }
+
+    public var contextUsageTapAction: (() -> Void)?
+
+    public func updatePermissionPresentation(_ presentation: ChatInputPermissionPresentation?) {
+        inputEditor.setPermissionTitle(presentation?.title, systemImageName: presentation?.systemImageName)
+    }
+
+    public func updateContextUsagePresentation(_ presentation: ChatInputContextUsagePresentation?) {
+        let fraction = presentation?.usedFraction ?? 0
+        inputEditor.contextButton.progress = fraction
+        inputEditor.contextButton.accessibilityLabel = presentation?.accessibilityLabel ?? String.localized("Context usage")
     }
 
     public var isModelButtonHidden: Bool {
@@ -393,6 +401,8 @@ open class ChatInputView: EditorSectionView {
         inputEditor.configuration = configuration
         quickSettingBar.configure(with: configuration.quickSettingItems)
         controlPanel.configure(with: configuration.controlPanelItems)
+        updatePermissionPresentation(configuration.permissionPresentation)
+        updateContextUsagePresentation(configuration.contextUsagePresentation)
     }
 
     func dismissSkillListIfNeeded() {
