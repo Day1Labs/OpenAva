@@ -131,7 +131,7 @@ final class ChatToolPermissionViewController: UIViewController {
         let container = UIStackView()
         container.axis = .vertical
         container.spacing = 12
-        container.alignment = .leading
+        container.alignment = .fill
 
         let iconBackground = UIView()
         iconBackground.backgroundColor = ChatUIDesign.Color.pureWhite
@@ -155,13 +155,17 @@ final class ChatToolPermissionViewController: UIViewController {
         ])
 
         let titleLabel = UILabel()
-        titleLabel.attributedText = makeEditorialTitle(
-            String.localized("Run tool “\(toolName)”?")
-        )
+        let titleText = String.localized("Run tool “\(toolName)”?")
+        titleLabel.attributedText = makeEditorialTitle(titleText)
         titleLabel.numberOfLines = 0
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        container.addArrangedSubview(iconBackground)
-        container.addArrangedSubview(titleLabel)
+        let headerRow = UIStackView(arrangedSubviews: [iconBackground, titleLabel])
+        headerRow.axis = .horizontal
+        headerRow.spacing = 12
+        headerRow.alignment = .center
+
+        container.addArrangedSubview(headerRow)
 
         if !requestMessage.isEmpty {
             let messageLabel = UILabel()
@@ -396,6 +400,12 @@ final class ChatToolPermissionViewController: UIViewController {
         button.layer.borderWidth = 1
         button.layer.borderColor = ChatUIDesign.Color.oatBorder.cgColor
 
+        #if targetEnvironment(macCatalyst)
+            if #available(macCatalyst 15.0, *) {
+                button.preferredBehavioralStyle = .pad
+            }
+        #endif
+
         button.addAction(UIAction { [weak self] _ in
             self?.selectRemember(choice: choice)
         }, for: .touchUpInside)
@@ -467,16 +477,21 @@ final class ChatToolPermissionViewController: UIViewController {
 
     /// Primary Dark button from DESIGN.md §5 (Off Black fill, white label, 4px radius).
     private func makePrimaryDarkButton(title: String, onTap: @escaping () -> Void) -> UIButton {
-        var config = UIButton.Configuration.plain()
+        var config = UIButton.Configuration.filled()
         config.attributedTitle = AttributedString(title, attributes: AttributeContainer([
             .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
-            .foregroundColor: ChatUIDesign.Color.pureWhite,
         ]))
+        config.baseForegroundColor = ChatUIDesign.Color.pureWhite
         config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
-        config.background.backgroundColor = ChatUIDesign.Color.offBlack
+        config.baseBackgroundColor = ChatUIDesign.Color.offBlack
         config.background.cornerRadius = ChatUIDesign.Radius.button
 
         let button = UIButton(configuration: config)
+        #if targetEnvironment(macCatalyst)
+            if #available(macCatalyst 15.0, *) {
+                button.preferredBehavioralStyle = .pad
+            }
+        #endif
         button.addAction(UIAction { _ in onTap() }, for: .touchUpInside)
         return button
     }
@@ -486,8 +501,8 @@ final class ChatToolPermissionViewController: UIViewController {
         var config = UIButton.Configuration.plain()
         config.attributedTitle = AttributedString(title, attributes: AttributeContainer([
             .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
-            .foregroundColor: ChatUIDesign.Color.offBlack,
         ]))
+        config.baseForegroundColor = ChatUIDesign.Color.offBlack
         config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
         config.background.backgroundColor = .clear
         config.background.strokeColor = ChatUIDesign.Color.offBlack
@@ -495,6 +510,11 @@ final class ChatToolPermissionViewController: UIViewController {
         config.background.cornerRadius = ChatUIDesign.Radius.button
 
         let button = UIButton(configuration: config)
+        #if targetEnvironment(macCatalyst)
+            if #available(macCatalyst 15.0, *) {
+                button.preferredBehavioralStyle = .pad
+            }
+        #endif
         button.addAction(UIAction { _ in onTap() }, for: .touchUpInside)
         return button
     }
