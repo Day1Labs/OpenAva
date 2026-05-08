@@ -152,6 +152,7 @@ public final class ConversationSession: Identifiable, Sendable {
     var toolPermissionMode: ToolPermissionMode = .default
     private(set) var sessionToolPermissionRules: [ToolPermissionRule] = []
     private(set) var sessionApprovedReadableRootURLs: [URL] = []
+    private(set) var sessionApprovedWritableRootURLs: [URL] = []
 
     func addSessionApprovedReadableRootURL(_ url: URL) {
         let standardizedURL = url.standardizedFileURL
@@ -163,6 +164,14 @@ public final class ConversationSession: Identifiable, Sendable {
 
     func setToolPermissionMode(_ mode: ToolPermissionMode) {
         toolPermissionMode = mode
+    }
+
+    func addSessionApprovedWritableRootURL(_ url: URL) {
+        let standardizedURL = url.standardizedFileURL
+        guard !sessionApprovedWritableRootURLs.contains(where: { $0.path == standardizedURL.path }) else {
+            return
+        }
+        sessionApprovedWritableRootURLs.append(standardizedURL)
     }
 
     func addSessionToolPermissionRule(_ rule: ToolPermissionRule) {
@@ -225,6 +234,7 @@ public final class ConversationSession: Identifiable, Sendable {
         let message: String?
         let reason: String?
         let approvedReadableRootURL: URL?
+        let approvedWritableRootURL: URL?
         let createdAt: Date
     }
 
@@ -249,6 +259,7 @@ public final class ConversationSession: Identifiable, Sendable {
             message: trimmedPermissionMessage(decision),
             reason: decision.reason,
             approvedReadableRootURL: decision.approvedReadableRootURL,
+            approvedWritableRootURL: decision.approvedWritableRootURL,
             createdAt: Date()
         )
 
@@ -276,9 +287,12 @@ public final class ConversationSession: Identifiable, Sendable {
     }
 
     func approveToolPermissionRequest(id requestID: String) {
-        let approvedReadableRootURL = pendingToolPermissionRequests.first(where: { $0.id == requestID })?.approvedReadableRootURL
-        if let approvedReadableRootURL {
+        let request = pendingToolPermissionRequests.first(where: { $0.id == requestID })
+        if let approvedReadableRootURL = request?.approvedReadableRootURL {
             addSessionApprovedReadableRootURL(approvedReadableRootURL)
+        }
+        if let approvedWritableRootURL = request?.approvedWritableRootURL {
+            addSessionApprovedWritableRootURL(approvedWritableRootURL)
         }
         resolveToolPermissionRequest(
             id: requestID,

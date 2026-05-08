@@ -61,10 +61,14 @@ final class ToolRegistryProvider: ToolProvider, ToolPermissionScopeProviding {
         let approvedReadableRootURLs = await MainActor.run {
             ConversationSessionManager.shared.cachedSession(for: invocationSessionID)?.sessionApprovedReadableRootURLs ?? []
         }
+        let approvedWritableRootURLs = await MainActor.run {
+            ConversationSessionManager.shared.cachedSession(for: invocationSessionID)?.sessionApprovedWritableRootURLs ?? []
+        }
         let response = await toolRuntime.handle(
             request,
             sessionID: invocationSessionID,
-            approvedReadableRootURLs: approvedReadableRootURLs
+            approvedReadableRootURLs: approvedReadableRootURLs,
+            approvedWritableRootURLs: approvedWritableRootURLs
         )
 
         logger.notice(

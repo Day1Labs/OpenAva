@@ -589,6 +589,7 @@
 "tool.permission.rule.ask" = "Tool execution requires approval because a permission rule asks before running this tool.";
 "tool.permission.readOutsideWorkspace" = "Tool execution requires approval because it reads an absolute path outside the known workspace scope.";
 "tool.permission.readOutsideAllowed" = "Tool execution requires approval because it reads an absolute path outside the allowed working directories.";
+"tool.permission.writeOutsideWorkspace" = "Tool execution requires approval because it attempts to write to an absolute path outside the known workspace scope.";
 "tool.permission.sensitivePath" = "Tool execution requires approval because it touches a sensitive path.";
 "tool.permission.deleteWorkspaceRoot" = "Deleting the workspace root requires approval.";
 "tool.permission.bash.unclassified" = "Bash command requires approval because it could not be classified.";

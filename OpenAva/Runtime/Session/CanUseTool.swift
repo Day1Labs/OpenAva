@@ -57,31 +57,34 @@ struct ToolPermissionDecision: Equatable {
     let message: String?
     let reason: String?
     let approvedReadableRootURL: URL?
+    let approvedWritableRootURL: URL?
 
     init(
         behavior: ToolPermissionBehavior,
         message: String?,
         reason: String?,
-        approvedReadableRootURL: URL? = nil
+        approvedReadableRootURL: URL? = nil,
+        approvedWritableRootURL: URL? = nil
     ) {
         self.behavior = behavior
         self.message = message
         self.reason = reason
         self.approvedReadableRootURL = approvedReadableRootURL
+        self.approvedWritableRootURL = approvedWritableRootURL
     }
 
     var allowsExecution: Bool {
         behavior == .allow
     }
 
-    static let allow = ToolPermissionDecision(behavior: .allow, message: nil, reason: nil, approvedReadableRootURL: nil)
+    static let allow = ToolPermissionDecision(behavior: .allow, message: nil, reason: nil, approvedReadableRootURL: nil, approvedWritableRootURL: nil)
 
     static func deny(message: String? = nil, reason: String? = nil) -> ToolPermissionDecision {
-        ToolPermissionDecision(behavior: .deny, message: message, reason: reason, approvedReadableRootURL: nil)
+        ToolPermissionDecision(behavior: .deny, message: message, reason: reason, approvedReadableRootURL: nil, approvedWritableRootURL: nil)
     }
 
-    static func ask(message: String? = nil, reason: String? = nil, approvedReadableRootURL: URL? = nil) -> ToolPermissionDecision {
-        ToolPermissionDecision(behavior: .ask, message: message, reason: reason, approvedReadableRootURL: approvedReadableRootURL)
+    static func ask(message: String? = nil, reason: String? = nil, approvedReadableRootURL: URL? = nil, approvedWritableRootURL: URL? = nil) -> ToolPermissionDecision {
+        ToolPermissionDecision(behavior: .ask, message: message, reason: reason, approvedReadableRootURL: approvedReadableRootURL, approvedWritableRootURL: approvedWritableRootURL)
     }
 }
 
@@ -116,6 +119,10 @@ func defaultToolPermissionPolicy(_ request: ToolRequest, _ tool: any ToolExecuto
 
     if let fileReadDecision = fileReadPermissionDecision(for: request, tool: tool, context: context) {
         return fileReadDecision
+    }
+
+    if let fileMutationDecision = fileMutationPermissionDecision(for: request, tool: tool, context: context) {
+        return fileMutationDecision
     }
 
     if tool.isReadOnly {
@@ -490,4 +497,42 @@ private func permissionArgumentStrings(for keys: [String], in arguments: String)
     return keys.compactMap { key in
         dictionary[key] as? String
     }
+}
+
+private func fileMutationPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, context: ToolExecutionContext) -> ToolPermissionDecision? {
+    guard tool.permissionProfile == .fileMutation else {
+        return nil
+    }
+
+    let path = permissionArgumentString(for: ["path", "file_path", "filePath"], in: request.arguments) ?? "."
+    let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard trimmedPath.hasPrefix("/") else {
+        return .ask(
+            message: String.localized("tool.permission.mutating"),
+            reason: "workspace_relative_write_requires_approval"
+        )
+    }
+
+    guard let scopeProvider = context.toolProvider as? ToolPermissionScopeProviding else {
+        return .ask(
+            message: String.localized("tool.permission.writeOutsideWorkspace"),
+            reason: "absolute_write_path_requires_approval"
+        )
+    }
+
+    let resolvedPath = normalizedPermissionPath(trimmedPath)
+    if let workspaceRoot = scopeProvider.toolPermissionWorkspaceRootURL?.standardizedFileURL.path {
+        if isPermissionPath(resolvedPath, withinRoot: workspaceRoot) {
+            return .ask(
+                message: String.localized("tool.permission.mutating"),
+                reason: "workspace_write_requires_approval"
+            )
+        }
+    }
+
+    return .ask(
+        message: String.localized("tool.permission.writeOutsideWorkspace"),
+        reason: "absolute_write_path_requires_approval",
+        approvedWritableRootURL: URL(fileURLWithPath: resolvedPath)
+    )
 }

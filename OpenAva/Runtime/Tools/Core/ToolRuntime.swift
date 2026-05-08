@@ -12,6 +12,7 @@ final class ToolRuntime: @unchecked Sendable {
         @TaskLocal static var sessionID: String?
         @TaskLocal static var teamContext: TeamInvocationContext?
         @TaskLocal static var approvedReadableRootURLs: [URL] = []
+        @TaskLocal static var approvedWritableRootURLs: [URL] = []
     }
 
     struct TeamInvocationContext {
@@ -369,13 +370,14 @@ final class ToolRuntime: @unchecked Sendable {
     }
 
     func handle(_ request: BridgeInvokeRequest, sessionID: String?) async -> BridgeInvokeResponse {
-        await handle(request, sessionID: sessionID, approvedReadableRootURLs: [])
+        await handle(request, sessionID: sessionID, approvedReadableRootURLs: [], approvedWritableRootURLs: [])
     }
 
     func handle(
         _ request: BridgeInvokeRequest,
         sessionID: String?,
-        approvedReadableRootURLs: [URL]
+        approvedReadableRootURLs: [URL],
+        approvedWritableRootURLs _: [URL]
     ) async -> BridgeInvokeResponse {
         await InvocationContext.$sessionID.withValue(sessionID) {
             await InvocationContext.$approvedReadableRootURLs.withValue(approvedReadableRootURLs) {

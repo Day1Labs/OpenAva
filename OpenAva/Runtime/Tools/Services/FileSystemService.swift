@@ -561,12 +561,12 @@ actor FileSystemService {
             url = workspaceURL.appendingPathComponent(path).standardizedFileURL
         }
 
-        guard isPathWithinRoot(url, root: workspaceURL) else {
+        guard isPathWithinRoot(url, root: workspaceURL) || isWithinWritableRoots(url) else {
             throw FileSystemError.accessDenied(path: path)
         }
 
         let resolvedURL = resolveSymlinkAwarePath(url)
-        guard isPathWithinRoot(resolvedURL, root: resolvedWorkspaceURL) else {
+        guard isPathWithinRoot(resolvedURL, root: resolvedWorkspaceURL) || isWithinWritableRoots(resolvedURL, resolveSymlinks: true) else {
             throw FileSystemError.accessDenied(path: path)
         }
 
@@ -594,6 +594,15 @@ actor FileSystemService {
             return workspaceURL
         }
         throw FileSystemError.accessDenied(path: normalizedURL.path)
+    }
+
+    private func isWithinWritableRoots(_ url: URL, resolveSymlinks: Bool = false) -> Bool {
+        let normalizedURL = resolveSymlinks ? resolveSymlinkAwarePath(url) : url.standardizedFileURL
+        let roots = ToolRuntime.InvocationContext.approvedWritableRootURLs
+        return roots.contains { rootURL in
+            let normalizedRootURL = resolveSymlinks ? resolveSymlinkAwarePath(rootURL) : rootURL.standardizedFileURL
+            return isPathWithinRoot(normalizedURL, root: normalizedRootURL)
+        }
     }
 
     private func isWithinReadableRoots(_ url: URL, resolveSymlinks: Bool = false) -> Bool {

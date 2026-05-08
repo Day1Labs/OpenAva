@@ -589,6 +589,7 @@
 "tool.permission.rule.ask" = "由于权限规则设定了运行前询问，该工具的执行需要您的授权。";
 "tool.permission.readOutsideWorkspace" = "由于访问了已知工作区范围之外的绝对路径，该工具的执行需要您的授权。";
 "tool.permission.readOutsideAllowed" = "由于访问了允许工作目录之外的绝对路径，该工具的执行需要您的授权。";
+"tool.permission.writeOutsideWorkspace" = "由于试图在工作区范围之外写入绝对路径，该工具的执行需要您的授权。";
 "tool.permission.sensitivePath" = "由于触及了敏感路径，该工具的执行需要您的授权。";
 "tool.permission.deleteWorkspaceRoot" = "删除工作区根目录的操作需要您的授权。";
 "tool.permission.bash.unclassified" = "由于无法对该命令进行分类，Bash 命令需要您的授权。";
