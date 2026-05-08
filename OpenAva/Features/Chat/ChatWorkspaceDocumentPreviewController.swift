@@ -52,6 +52,16 @@ final class ChatWorkspaceDocumentPreviewController: UIViewController {
         let view = MarkdownTextView()
         view.backgroundColor = .systemBackground
         view.throttleInterval = 1 / 60
+        view.linkHandler = { payload, _, _ in
+            switch payload {
+            case let .url(url):
+                UIApplication.shared.open(url)
+            case let .string(urlString):
+                if let url = URL(string: urlString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        }
         return view
     }()
 

@@ -319,6 +319,16 @@ extension MessageListView: ListViewAdapter {
                 responseView.theme = theme
                 let package = markdownPackageCache.package(for: message, theme: theme)
                 responseView.markdownView.setMarkdown(package)
+                responseView.linkTapHandler = { payload, _, _ in
+                    switch payload {
+                    case let .url(url):
+                        UIApplication.shared.open(url)
+                    case let .string(urlString):
+                        if let url = URL(string: urlString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
                 // Copy / Select All menu
                 let text = message.content
                 responseView.contextMenuProvider = { [weak self, weak responseView] _ in
