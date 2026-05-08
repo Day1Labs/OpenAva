@@ -229,7 +229,11 @@ extension SkillTools {
             lines.append("- usage_count: \(skill.usageCount)")
         }
         if !skill.supportingFiles.isEmpty {
-            lines.append("- supporting_files: \(skill.supportingFiles.joined(separator: ", "))")
+            let skillBaseDir = URL(fileURLWithPath: skill.path).deletingLastPathComponent()
+            let absoluteSupportingFiles = skill.supportingFiles.map { relativePath in
+                skillBaseDir.appendingPathComponent(relativePath).standardizedFileURL.path
+            }
+            lines.append("- supporting_files: \(absoluteSupportingFiles.joined(separator: ", "))")
         }
 
         lines.append("")
@@ -304,9 +308,11 @@ extension SkillTools {
             lines.append("- maturity: \(maturity)")
         }
         if !skill.supportingFiles.isEmpty {
-            lines.append("- supporting_files: \(skill.supportingFiles.joined(separator: ", "))")
-            lines.append("")
-            lines.append("Resolve skill-relative files against the skill directory that contains SKILL.md.")
+            let skillBaseDir = URL(fileURLWithPath: skill.path).deletingLastPathComponent()
+            let absoluteSupportingFiles = skill.supportingFiles.map { relativePath in
+                skillBaseDir.appendingPathComponent(relativePath).standardizedFileURL.path
+            }
+            lines.append("- supporting_files: \(absoluteSupportingFiles.joined(separator: ", "))")
         }
 
         lines.append("")
