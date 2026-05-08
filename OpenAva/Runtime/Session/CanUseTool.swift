@@ -154,13 +154,13 @@ func defaultToolPermissionPolicy(_ request: ToolRequest, _ tool: any ToolExecuto
 
     if tool.isDestructive {
         return .ask(
-            message: String.localized("Tool execution requires approval because this tool can modify or delete data."),
+            message: String.localized("tool.permission.destructive"),
             reason: "destructive_tool_requires_approval"
         )
     }
 
     return .ask(
-        message: String.localized("Tool execution requires approval because this tool can modify local app state or invoke additional instructions."),
+        message: String.localized("tool.permission.mutating"),
         reason: "unclassified_mutating_tool_requires_approval"
     )
 }
@@ -182,7 +182,7 @@ private func defaultTeamToolPermissionDecision(for request: ToolRequest, tool: a
     case .teamMessage:
         if teamMessageSendRequestsShutdown(request.arguments) {
             return .ask(
-                message: String.localized("Stopping a teammate requires approval."),
+                message: String.localized("tool.permission.teamShutdown"),
                 reason: "team_shutdown_requires_approval"
             )
         }
@@ -237,12 +237,12 @@ private func sessionRulePermissionDecision(for request: ToolRequest, in session:
         )
     case .deny:
         return .deny(
-            message: String.localized("Tool execution was denied by a remembered permission rule."),
+            message: String.localized("tool.permission.rule.denied"),
             reason: "permission_rule_deny_\(rule.scope.rawValue)"
         )
     case .ask:
         return .ask(
-            message: String.localized("Tool execution requires approval because a permission rule asks before running this tool."),
+            message: String.localized("tool.permission.rule.ask"),
             reason: "permission_rule_ask_\(rule.scope.rawValue)"
         )
     }
@@ -302,7 +302,7 @@ private func fileReadPermissionDecision(for request: ToolRequest, tool: any Tool
 
     guard let scopeProvider = context.toolProvider as? ToolPermissionScopeProviding else {
         return .ask(
-            message: String.localized("Tool execution requires approval because it reads an absolute path outside the known workspace scope."),
+            message: String.localized("tool.permission.readOutsideWorkspace"),
             reason: "absolute_read_path_requires_approval"
         )
     }
@@ -318,7 +318,7 @@ private func fileReadPermissionDecision(for request: ToolRequest, tool: any Tool
     }
 
     return .ask(
-        message: String.localized("Tool execution requires approval because it reads an absolute path outside the allowed working directories."),
+        message: String.localized("tool.permission.readOutsideAllowed"),
         reason: "absolute_read_path_requires_approval",
         approvedReadableRootURL: URL(fileURLWithPath: resolvedPath)
     )
@@ -337,14 +337,14 @@ private func isPermissionPath(_ path: String, withinRoot root: String) -> Bool {
 private func parameterAwarePermissionDecision(for request: ToolRequest, tool: any ToolExecutor) -> ToolPermissionDecision? {
     if permissionPathArguments(in: request.arguments).contains(where: isSensitivePermissionPath) {
         return .ask(
-            message: String.localized("Tool execution requires approval because it touches a sensitive path."),
+            message: String.localized("tool.permission.sensitivePath"),
             reason: "sensitive_path_requires_approval"
         )
     }
 
     if tool.permissionProfile == .fileDelete, deletesWorkspaceRoot(request.arguments) {
         return .ask(
-            message: String.localized("Deleting the workspace root requires approval."),
+            message: String.localized("tool.permission.deleteWorkspaceRoot"),
             reason: "workspace_root_delete_requires_approval"
         )
     }
@@ -358,7 +358,7 @@ private func bashPermissionDecision(for request: ToolRequest, tool: any ToolExec
     }
     guard let classification = BashPermissionClassifier.default.classify(arguments: request.arguments) else {
         return .ask(
-            message: String.localized("Bash command requires approval because it could not be classified."),
+            message: String.localized("tool.permission.bash.unclassified"),
             reason: "bash_command_unclassified"
         )
     }
@@ -379,17 +379,17 @@ private func bashPermissionDecision(for request: ToolRequest, tool: any ToolExec
             )
         }
         return .ask(
-            message: String.localized("Bash command requires approval because it may modify local state, access the network, or has unknown risk."),
+            message: String.localized("tool.permission.bash.unknownRisk"),
             reason: classification.reason
         )
     case .privilegeEscalation, .destructive, .sensitivePath:
         return .ask(
-            message: String.localized("Bash command requires approval because it is potentially destructive, privileged, or touches a sensitive path."),
+            message: String.localized("tool.permission.bash.destructive"),
             reason: classification.reason
         )
     case .network, .unknown:
         return .ask(
-            message: String.localized("Bash command requires approval because it may modify local state, access the network, or has unknown risk."),
+            message: String.localized("tool.permission.bash.unknownRisk"),
             reason: classification.reason
         )
     }

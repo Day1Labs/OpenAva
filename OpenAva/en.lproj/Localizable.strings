@@ -582,3 +582,17 @@
 "chat.menu.team.noAgents" = "This team has no agents yet";
 "settings.skills.editor.description.placeholder" = "Briefly describe what this skill does.";
 "settings.skills.editor.defaultTemplate.purpose" = "# Purpose\n\nDescribe when and why this skill should be used.\n\n# Steps\n\n1. Add clear execution steps.\n2. Keep outputs actionable.\n";
+
+// Tool Permission & Execution Strings
+"tool.permission.destructive" = "Tool execution requires approval because this tool can modify or delete data.";
+"tool.permission.mutating" = "Tool execution requires approval because this tool can modify local app state or invoke additional instructions.";
+"tool.permission.teamShutdown" = "Stopping a teammate requires approval.";
+"tool.permission.rule.denied" = "Tool execution was denied by a remembered permission rule.";
+"tool.permission.rule.ask" = "Tool execution requires approval because a permission rule asks before running this tool.";
+"tool.permission.readOutsideWorkspace" = "Tool execution requires approval because it reads an absolute path outside the known workspace scope.";
+"tool.permission.readOutsideAllowed" = "Tool execution requires approval because it reads an absolute path outside the allowed working directories.";
+"tool.permission.sensitivePath" = "Tool execution requires approval because it touches a sensitive path.";
+"tool.permission.deleteWorkspaceRoot" = "Deleting the workspace root requires approval.";
+"tool.permission.bash.unclassified" = "Bash command requires approval because it could not be classified.";
+"tool.permission.bash.unknownRisk" = "Bash command requires approval because it may modify local state, access the network, or has unknown risk.";
+"tool.permission.bash.destructive" = "Bash command requires approval because it is potentially destructive, privileged, or touches a sensitive path.";
