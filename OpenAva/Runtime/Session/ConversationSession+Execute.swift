@@ -119,13 +119,15 @@ public extension ConversationSession {
 
     private func beginPromptSubmission(
         model: ConversationSession.Model,
-        prompt: PromptInput,
+        prompt: PromptInput?,
         usingExistingReservation: Bool
     ) -> Task<Void, Never>? {
         logger.notice(
-            "submit prompt requested session=\(self.id, privacy: .public) textLength=\(prompt.text.count) attachments=\(prompt.attachments.count) queryActiveBefore=\(String(self.isQueryActive), privacy: .public)"
+            "submit prompt requested session=\(self.id, privacy: .public) prompt_provided=\(prompt != nil) queryActiveBefore=\(String(self.isQueryActive), privacy: .public)"
         )
-        lastSubmittedPromptInput = prompt
+        if let prompt {
+            lastSubmittedPromptInput = prompt
+        }
         showsInterruptedRetryAction = false
         var taskToAwait: Task<Void, Never>?
 
@@ -146,9 +148,11 @@ public extension ConversationSession {
                 return
             }
 
-            let userMessage = appendPromptMessage(prompt)
+            if let prompt {
+                let userMessage = appendPromptMessage(prompt)
+                recordMessageInTranscript(userMessage)
+            }
             notifyMessagesDidChange(scrolling: true)
-            recordMessageInTranscript(userMessage)
 
             let task = Task { @MainActor [generation] in
                 logger.notice("task started session=\(self.id, privacy: .public)")
@@ -191,10 +195,11 @@ public extension ConversationSession {
                 do {
                     var requestMessages = await buildMessages(capabilities: model.capabilities)
                     let tools = await enabledRequestTools(for: model.capabilities)
-                    let querySource: QuerySource = switch prompt.source {
+                    let executionSource = prompt?.source ?? lastSubmittedPromptInput?.source
+                    let querySource: QuerySource = switch executionSource {
                     case .heartbeat:
                         .heartbeat
-                    case .user, .teamMention, .teamTask, .teamBroadcast, .teamMessage, .systemEvent:
+                    case .user, .teamMention, .teamTask, .teamBroadcast, .teamMessage, .systemEvent, .none:
                         .user
                     }
                     let toolUseContext = ToolExecutionContext(
@@ -264,18 +269,18 @@ public extension ConversationSession {
     func retryInterruptedPromptSubmission() -> Bool {
         guard showsInterruptedRetryAction,
               !isQueryActive,
-              let model = models.chat,
-              let lastSubmittedPromptInput
+              let model = models.chat
         else {
             return false
         }
         showsInterruptedRetryAction = false
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let didStart = self.submitPromptWithoutWaiting(
+            let didStart = self.beginPromptSubmission(
                 model: model,
-                prompt: lastSubmittedPromptInput
-            )
+                prompt: nil, // Do not append a new prompt, resume the history directly
+                usingExistingReservation: false
+            ) != nil
             if !didStart {
                 self.showsInterruptedRetryAction = true
             }
