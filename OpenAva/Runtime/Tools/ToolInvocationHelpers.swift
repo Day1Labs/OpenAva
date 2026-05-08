@@ -12,7 +12,25 @@ enum ToolInvocationHelpers {
                 NSLocalizedDescriptionKey: "INVALID_REQUEST: paramsJSON required",
             ])
         }
-        return try JSONDecoder().decode(type, from: data)
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch let DecodingError.keyNotFound(key, _) {
+            throw NSError(domain: "ToolInvocation", code: 24, userInfo: [
+                NSLocalizedDescriptionKey: "INVALID_REQUEST: Missing required parameter '\(key.stringValue)'",
+            ])
+        } catch let DecodingError.typeMismatch(_, context) {
+            let path = context.codingPath.map(\.stringValue).joined(separator: ".")
+            throw NSError(domain: "ToolInvocation", code: 25, userInfo: [
+                NSLocalizedDescriptionKey: "INVALID_REQUEST: Type mismatch for parameter '\(path)'",
+            ])
+        } catch let DecodingError.valueNotFound(_, context) {
+            let path = context.codingPath.map(\.stringValue).joined(separator: ".")
+            throw NSError(domain: "ToolInvocation", code: 26, userInfo: [
+                NSLocalizedDescriptionKey: "INVALID_REQUEST: Value not found for parameter '\(path)'",
+            ])
+        } catch {
+            throw error
+        }
     }
 
     // MARK: - Response Helpers
