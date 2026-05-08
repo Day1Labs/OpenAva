@@ -616,7 +616,7 @@ struct ChatRootView: View {
     private var currentActiveAgentEmoji: String {
         switch visibleActiveSessionContext {
         case .allAgentsTeam:
-            return "👥"
+            return ""
         case let .team(teamID):
             return activeTeamProfile(for: teamID)?.emoji ?? "👥"
         case .agent:

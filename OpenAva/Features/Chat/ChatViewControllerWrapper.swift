@@ -272,7 +272,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     private var resolvedSessionEmoji: String {
         switch activeContext {
         case .allAgentsTeam:
-            return "👥"
+            return ""
         case let .team(teamID):
             let emoji = teams.first(where: { $0.id == teamID })?.emoji.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return emoji.isEmpty ? "👥" : emoji
@@ -283,14 +283,9 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
 
     private var emptyStateContent: ChatViewController.EmptyStateContent {
         switch activeContext {
-        case .allAgentsTeam:
+        case .allAgentsTeam, .team:
             return .init(
-                title: L10n.tr("chat.emptyState.allAgentsTeam.title"),
-                subtitle: L10n.tr("chat.emptyState.team.subtitle")
-            )
-        case .team:
-            return .init(
-                title: L10n.tr("chat.emptyState.team.title", resolvedSessionTitle),
+                title: L10n.tr("chat.emptyState.agent.title", resolvedEmptyStateUserName),
                 subtitle: L10n.tr("chat.emptyState.team.subtitle")
             )
         case .agent:
@@ -1057,7 +1052,7 @@ extension ChatViewControllerWrapper {
         }
 
         func chatViewControllerLeadingButton(_: ChatViewController, button: UIButton) {
-            let image = makeActiveSessionButtonImage() ?? UIImage(systemName: ChatTopBar.leadingMenuSystemImage)
+            let image = UIImage(systemName: ChatTopBar.leadingMenuSystemImage)
             if #available(iOS 15.0, *) {
                 var configuration = button.configuration ?? .plain()
                 configuration.image = image
@@ -1421,16 +1416,6 @@ extension ChatViewControllerWrapper {
                 return nil
             }
             return image
-        }
-
-        private func makeActiveSessionButtonImage() -> UIImage? {
-            switch activeContext {
-            case .allAgentsTeam, .team:
-                let emoji = activeAgentEmoji.trimmingCharacters(in: .whitespacesAndNewlines)
-                return makeEmojiButtonImage(from: emoji.isEmpty ? "👥" : emoji)
-            case .agent:
-                return makeActiveAgentButtonImage()
-            }
         }
 
         private func makeEmojiButtonImage(from emoji: String) -> UIImage? {

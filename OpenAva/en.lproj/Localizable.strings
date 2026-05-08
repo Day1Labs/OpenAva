@@ -318,10 +318,8 @@
 "chat.contextUsage.manualCompact" = "Manual Compact";
 "chat.contextUsage.trigger.manual" = "Manual";
 "chat.contextUsage.trigger.auto" = "Auto";
-"chat.emptyState.agent.title" = "Hi, %@";
+"chat.emptyState.agent.title" = "Hey👋 %@";
 "chat.emptyState.agent.subtitle" = "Ask a question, run a skill, or call this Agent.";
-"chat.emptyState.allAgentsTeam.title" = "All Agents are ready";
-"chat.emptyState.team.title" = "%@ is ready";
 "chat.emptyState.team.subtitle" = "Start a discussion, assign work, or coordinate multiple Agents together.";
 "chat.quickSkill.prompt" = "Please use skill \"%@\" to handle the current task. If key information is missing, ask one most critical clarification question first.";
 "chat.menu.autoCompact" = "Auto-compact";

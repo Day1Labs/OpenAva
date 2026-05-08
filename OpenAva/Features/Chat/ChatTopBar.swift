@@ -1,7 +1,7 @@
 import Foundation
 
 enum ChatTopBar {
-    static let leadingMenuSystemImage = "person.2"
+    static let leadingMenuSystemImage = "square.grid.2x2"
     static let trailingMenuSystemImage = "ellipsis"
 
     struct Title: Equatable {
@@ -184,7 +184,7 @@ enum ChatTopBar {
             id: "session-globalTeam",
             kind: .allAgentsTeam,
             title: L10n.tr("chat.menu.allAgentsTeam"),
-            emoji: "👥",
+            emoji: "",
             isSelected: activeContext == .allAgentsTeam,
             isEnabled: true
         ))
