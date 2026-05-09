@@ -62,7 +62,7 @@ struct ChatRootView: View {
 
     var body: some View {
         NavigationStack(path: $destinationPath) {
-            rootContent
+            chatScreenView
                 .navigationDestination(for: MenuDestination.self) { destination in
                     destinationView(for: destination)
                 }
@@ -186,10 +186,6 @@ struct ChatRootView: View {
         }
     }
 
-    private var rootContent: some View {
-        chatScreenView
-    }
-
     private var isMainChatActive: Bool {
         #if targetEnvironment(macCatalyst)
             // On Catalyst, toggling showsSystemTopBar installs/uninstalls a titlebar toolbar, which
@@ -207,7 +203,7 @@ struct ChatRootView: View {
     }
 
     private var chatScreenView: some View {
-        let sessionKey = primarySessionKey
+        let sessionKey = resolvedDefaultSessionKey
         let activeContext = visibleActiveSessionContext
         return ChatScreen(
             container: containerStore.container,
@@ -219,7 +215,7 @@ struct ChatRootView: View {
             projectWorkspaces: containerStore.projectWorkspaces,
             activeProjectWorkspaceID: containerStore.activeProjectWorkspace?.id,
             activeProjectWorkspaceName: containerStore.activeProjectWorkspace?.resolvedName ?? "OpenAva",
-            teams: visibleTeams,
+            teams: containerStore.teams,
             agents: containerStore.agents,
             activeContext: activeContext,
             activeAgentID: containerStore.activeAgent?.id,
@@ -263,14 +259,6 @@ struct ChatRootView: View {
     private var resolvedDefaultSessionKey: String {
         let trimmed = containerStore.container.defaultSessionKey.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? "main" : trimmed
-    }
-
-    private var primarySessionKey: String {
-        resolvedDefaultSessionKey
-    }
-
-    private var visibleTeams: [TeamProfile] {
-        containerStore.teams
     }
 
     private var visibleActiveSessionContext: ActiveSessionContext {
@@ -462,7 +450,7 @@ struct ChatRootView: View {
             return .init(
                 agent: agent,
                 agentID: agent.id.uuidString,
-                mainSessionID: scopedSessionID(for: primarySessionKey, context: .agent(agent.id)),
+                mainSessionID: scopedSessionID(for: resolvedDefaultSessionKey, context: .agent(agent.id)),
                 agentName: agent.name,
                 agentEmoji: agent.emoji,
                 workspaceRootURL: agent.workspaceURL,
@@ -610,115 +598,45 @@ struct ChatRootView: View {
 }
 
 private struct ChatScreen: View {
-    private let container: AppContainer
-    private let scopedSessionID: String
-    private let teamSessionsRootURL: URL?
-    private let projectWorkspaces: [ProjectWorkspaceProfile]
-    private let activeProjectWorkspaceID: UUID?
-    private let activeProjectWorkspaceName: String
-    private let teams: [TeamProfile]
-    private let agents: [AgentProfile]
-    private let activeContext: ActiveSessionContext
-    private let activeAgentID: UUID?
-    private let activeAgentName: String
-    private let activeAgentEmoji: String
-    private let selectedModelName: String
-    private let selectedProviderName: String
-    private let selectedThinkingStrength: ChatThinkingStrength
-    private let pendingAutoSendID: String?
-    private let pendingAutoSendMessage: String?
-    private let menuRefreshToken: Int
-    private let onConsumePendingAutoSend: ((String) -> Void)?
-    private let onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)?
-    private let onSessionSwitch: ((ActiveSessionContext) -> Void)?
-    private let onModelSwitch: ((UUID) -> Void)?
-    private let onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?
-    private let onWorkspaceSwitch: ((UUID) -> Void)?
-    private let onOpenWorkspaceDirectory: (() -> Void)?
-    private let onImportWorkspace: ((UIViewController?) -> Void)?
-    private let onCreateWorkspace: (() -> Void)?
-    private let onCreateLocalAgent: (() -> Void)?
-    private let onDeleteCurrentAgent: (() -> Void)?
-    private let onRenameCurrentAgent: ((String) -> Bool)?
-    private let autoCompactEnabled: Bool
-    private let showsSystemTopBar: Bool
-    private let onToggleAutoCompact: (() -> Void)?
+    let container: AppContainer
+    let scopedSessionID: String
+    let teamSessionsRootURL: URL?
+    let projectWorkspaces: [ProjectWorkspaceProfile]
+    let activeProjectWorkspaceID: UUID?
+    let activeProjectWorkspaceName: String
+    let teams: [TeamProfile]
+    let agents: [AgentProfile]
+    let activeContext: ActiveSessionContext
+    let activeAgentID: UUID?
+    let activeAgentName: String
+    let activeAgentEmoji: String
+    let selectedModelName: String
+    let selectedProviderName: String
+    let selectedThinkingStrength: ChatThinkingStrength
+    let pendingAutoSendID: String?
+    let pendingAutoSendMessage: String?
+    let menuRefreshToken: Int
+    let onConsumePendingAutoSend: ((String) -> Void)?
+    let onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)?
+    let onSessionSwitch: ((ActiveSessionContext) -> Void)?
+    let onModelSwitch: ((UUID) -> Void)?
+    let onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?
+    let onWorkspaceSwitch: ((UUID) -> Void)?
+    let onOpenWorkspaceDirectory: (() -> Void)?
+    let onImportWorkspace: ((UIViewController?) -> Void)?
+    let onCreateWorkspace: (() -> Void)?
+    let onCreateLocalAgent: (() -> Void)?
+    let onDeleteCurrentAgent: (() -> Void)?
+    let onRenameCurrentAgent: ((String) -> Bool)?
+    let autoCompactEnabled: Bool
+    let showsSystemTopBar: Bool
+    let onToggleAutoCompact: (() -> Void)?
 
     @State private var showsRenameAlert = false
     @State private var renameText = ""
 
-    init(
-        container: AppContainer,
-        scopedSessionID: String,
-        teamSessionsRootURL: URL? = nil,
-        projectWorkspaces: [ProjectWorkspaceProfile] = [],
-        activeProjectWorkspaceID: UUID? = nil,
-        activeProjectWorkspaceName: String = "OpenAva",
-        teams: [TeamProfile],
-        agents: [AgentProfile],
-        activeContext: ActiveSessionContext,
-        activeAgentID: UUID?,
-        activeAgentName: String,
-        activeAgentEmoji: String,
-        selectedModelName: String,
-        selectedProviderName: String,
-        selectedThinkingStrength: ChatThinkingStrength = .medium,
-        pendingAutoSendID: String? = nil,
-        pendingAutoSendMessage: String? = nil,
-        menuRefreshToken: Int = 0,
-        onConsumePendingAutoSend: ((String) -> Void)? = nil,
-        onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)? = nil,
-        onSessionSwitch: ((ActiveSessionContext) -> Void)? = nil,
-        onModelSwitch: ((UUID) -> Void)? = nil,
-        onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)? = nil,
-        onWorkspaceSwitch: ((UUID) -> Void)? = nil,
-        onOpenWorkspaceDirectory: (() -> Void)? = nil,
-        onImportWorkspace: ((UIViewController?) -> Void)? = nil,
-        onCreateWorkspace: (() -> Void)? = nil,
-        onCreateLocalAgent: (() -> Void)? = nil,
-        onDeleteCurrentAgent: (() -> Void)? = nil,
-        onRenameCurrentAgent: ((String) -> Bool)? = nil,
-        autoCompactEnabled: Bool = true,
-        showsSystemTopBar: Bool = true,
-        onToggleAutoCompact: (() -> Void)? = nil
-    ) {
-        self.container = container
-        self.scopedSessionID = scopedSessionID
-        self.teamSessionsRootURL = teamSessionsRootURL
-        self.projectWorkspaces = projectWorkspaces
-        self.activeProjectWorkspaceID = activeProjectWorkspaceID
-        self.activeProjectWorkspaceName = activeProjectWorkspaceName
-        self.teams = teams
-        self.agents = agents
-        self.activeContext = activeContext
-        self.activeAgentID = activeAgentID
-        self.activeAgentName = activeAgentName
-        self.activeAgentEmoji = activeAgentEmoji
-        self.selectedModelName = selectedModelName
-        self.selectedProviderName = selectedProviderName
-        self.selectedThinkingStrength = selectedThinkingStrength
-        self.pendingAutoSendID = pendingAutoSendID
-        self.pendingAutoSendMessage = pendingAutoSendMessage
-        self.menuRefreshToken = menuRefreshToken
-        self.onConsumePendingAutoSend = onConsumePendingAutoSend
-        self.onMenuAction = onMenuAction
-        self.onSessionSwitch = onSessionSwitch
-        self.onModelSwitch = onModelSwitch
-        self.onThinkingStrengthChange = onThinkingStrengthChange
-        self.onWorkspaceSwitch = onWorkspaceSwitch
-        self.onOpenWorkspaceDirectory = onOpenWorkspaceDirectory
-        self.onImportWorkspace = onImportWorkspace
-        self.onCreateWorkspace = onCreateWorkspace
-        self.onCreateLocalAgent = onCreateLocalAgent
-        self.onDeleteCurrentAgent = onDeleteCurrentAgent
-        self.onRenameCurrentAgent = onRenameCurrentAgent
-        self.autoCompactEnabled = autoCompactEnabled
-        self.showsSystemTopBar = showsSystemTopBar
-        self.onToggleAutoCompact = onToggleAutoCompact
-    }
-
     var body: some View {
-        contentView
+        chatControllerView
             .alert(L10n.tr("chat.menu.renameAgentNamed", activeAgentName), isPresented: $showsRenameAlert) {
                 TextField(L10n.tr("chat.menu.renameAlert.placeholder"), text: $renameText)
                 Button(L10n.tr("common.cancel"), role: .cancel) {}
@@ -841,46 +759,51 @@ private struct ChatScreen: View {
                 if shouldInsertDividerBeforeSessionEntry(at: index) {
                     Divider()
                 }
-                switch entry.kind {
-                case .allAgentsTeam:
+                sessionMenuEntryView(entry)
+            }
+        }
+
+        @ViewBuilder
+        private func sessionMenuEntryView(_ entry: ChatTopBar.SessionMenuEntry) -> some View {
+            switch entry.kind {
+            case .allAgentsTeam, .team, .agent:
+                if let context = sessionContext(for: entry) {
                     Button {
-                        onSessionSwitch?(.allAgentsTeam)
+                        onSessionSwitch?(context)
                     } label: {
-                        if entry.isSelected {
-                            Label(entry.displayTitle, systemImage: "checkmark")
-                        } else {
-                            Text(entry.displayTitle)
-                        }
+                        selectableMenuLabel(entry.displayTitle, isSelected: entry.isSelected)
                     }
-                case let .team(teamID):
-                    Button {
-                        onSessionSwitch?(.team(teamID))
-                    } label: {
-                        if entry.isSelected {
-                            Label(entry.displayTitle, systemImage: "checkmark")
-                        } else {
-                            Text(entry.displayTitle)
-                        }
-                    }
-                case let .agent(agentID):
-                    Button {
-                        onSessionSwitch?(.agent(agentID))
-                    } label: {
-                        if entry.isSelected {
-                            Label(entry.displayTitle, systemImage: "checkmark")
-                        } else {
-                            Text(entry.displayTitle)
-                        }
-                    }
-                case .createLocalAgent:
-                    Button {
-                        onCreateLocalAgent?()
-                    } label: {
-                        Label(entry.title, systemImage: "plus")
-                    }
-                case .empty:
-                    Text(entry.title)
                 }
+            case .createLocalAgent:
+                Button {
+                    onCreateLocalAgent?()
+                } label: {
+                    Label(entry.title, systemImage: "plus")
+                }
+            case .empty:
+                Text(entry.title)
+            }
+        }
+
+        private func sessionContext(for entry: ChatTopBar.SessionMenuEntry) -> ActiveSessionContext? {
+            switch entry.kind {
+            case .allAgentsTeam:
+                .allAgentsTeam
+            case let .team(teamID):
+                .team(teamID)
+            case let .agent(agentID):
+                .agent(agentID)
+            case .createLocalAgent, .empty:
+                nil
+            }
+        }
+
+        @ViewBuilder
+        private func selectableMenuLabel(_ title: String, isSelected: Bool) -> some View {
+            if isSelected {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
             }
         }
 
@@ -891,11 +814,7 @@ private struct ChatScreen: View {
                 Button {
                     onWorkspaceSwitch?(workspaceID)
                 } label: {
-                    if entry.isSelected {
-                        Label(entry.title, systemImage: "checkmark")
-                    } else {
-                        Text(entry.title)
-                    }
+                    selectableMenuLabel(entry.title, isSelected: entry.isSelected)
                 }
             case .openActiveWorkspaceDirectory:
                 Button {
@@ -987,10 +906,6 @@ private struct ChatScreen: View {
             onMenuAction?(action)
         }
     #endif
-
-    private var contentView: some View {
-        chatControllerView
-    }
 
     private var toolInvocationSessionID: String {
         switch activeContext {
