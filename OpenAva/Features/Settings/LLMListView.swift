@@ -11,6 +11,8 @@ struct LLMListView: View {
     @State private var editingModel: AppConfig.LLMModel?
     @State private var modelToDelete: AppConfig.LLMModel?
     @State private var showResetUsageConfirmation = false
+    
+    @State private var envKeys: [LLMProvider: String] = [:]
 
     private var selectedModel: AppConfig.LLMModel? {
         models.first(where: { $0.id == selectedModelID }) ?? models.first
@@ -92,9 +94,11 @@ struct LLMListView: View {
             }
             .onAppear {
                 refreshModels()
+                fetchEnvKeys()
             }
             .refreshable {
                 refreshModels()
+                fetchEnvKeys()
             }
     }
 
@@ -115,6 +119,11 @@ struct LLMListView: View {
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 16)
+                    
+                    if !envKeys.isEmpty {
+                        envKeysBanner
+                            .padding(.horizontal, 16)
+                    }
 
                     VStack(spacing: 8) {
                         modelRows
@@ -143,6 +152,63 @@ struct LLMListView: View {
         }
     }
 
+    private var modelsByProvider: [(String, [AppConfig.LLMModel])] {
+        let grouped = Dictionary(grouping: models, by: { $0.provider })
+        // Sort providers, putting custom last
+        return grouped.sorted(by: {
+            if $0.key == "openai-compatible" { return false }
+            if $1.key == "openai-compatible" { return true }
+            return $0.key < $1.key
+        }).map { (providerRaw, models) in
+            let displayName = LLMProvider(rawValue: providerRaw)?.displayName ?? providerRaw
+            return (displayName, models)
+        }
+    }
+
+    @ViewBuilder
+    private var envKeysBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "terminal")
+                .font(.system(size: 16))
+                .foregroundStyle(Color(uiColor: ChatUIDesign.Color.brandOrange))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.tr("settings.llmList.envDetected.title"))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color(uiColor: ChatUIDesign.Color.offBlack))
+                
+                let providerNames = envKeys.keys.map { $0.displayName }.sorted().joined(separator: ", ")
+                Text(L10n.tr("settings.llmList.envDetected.message", providerNames))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black60))
+            }
+            
+            Spacer()
+            
+            Button {
+                applyEnvKeys()
+            } label: {
+                Text(L10n.tr("common.apply"))
+                    .font(.system(size: 13, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(uiColor: ChatUIDesign.Color.brandOrange))
+                    .foregroundStyle(Color(uiColor: ChatUIDesign.Color.pureWhite))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(uiColor: ChatUIDesign.Color.brandOrange).opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color(uiColor: ChatUIDesign.Color.brandOrange).opacity(0.15), lineWidth: 1)
+        )
+    }
+
     @ViewBuilder
     private var modelRows: some View {
         if models.isEmpty {
@@ -150,28 +216,40 @@ struct LLMListView: View {
                 isShowingAddSheet = true
             }
         } else {
-            ForEach(models) { model in
-                ModelRow(
-                    model: model,
-                    usageRecord: usageRecord(for: model),
-                    onEdit: { openEditor(for: model) },
-                    onDelete: { modelToDelete = model }
-                )
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    openEditor(for: model)
-                }
-                .contextMenu {
-                    Button {
-                        openEditor(for: model)
-                    } label: {
-                        Label(L10n.tr("common.edit"), systemImage: "pencil")
-                    }
+            ForEach(modelsByProvider, id: \.0) { providerName, providerModels in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(providerName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black50))
+                        .padding(.top, 8)
+                        .padding(.bottom, 2)
+                        .padding(.horizontal, 4)
 
-                    Button(role: .destructive) {
-                        modelToDelete = model
-                    } label: {
-                        Label(L10n.tr("common.delete"), systemImage: "trash")
+                    ForEach(providerModels) { model in
+                        ModelRow(
+                            model: model,
+                            usageRecord: usageRecord(for: model),
+                            onEdit: { openEditor(for: model) },
+                            onDelete: { modelToDelete = model }
+                        )
+                        .contentShape(Rectangle())
+                        .opacity(model.isConfigured ? 1.0 : 0.6)
+                        .onTapGesture {
+                            openEditor(for: model)
+                        }
+                        .contextMenu {
+                            Button {
+                                openEditor(for: model)
+                            } label: {
+                                Label(L10n.tr("common.edit"), systemImage: "pencil")
+                            }
+
+                            Button(role: .destructive) {
+                                modelToDelete = model
+                            } label: {
+                                Label(L10n.tr("common.delete"), systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
@@ -182,6 +260,61 @@ struct LLMListView: View {
         let collection = containerStore.container.config.llmCollection
         models = collection.models
         selectedModelID = containerStore.container.config.selectedLLMModelID
+    }
+
+    private func fetchEnvKeys() {
+        #if targetEnvironment(macCatalyst) || os(macOS)
+        DispatchQueue.global(qos: .userInitiated).async {
+            let keys = EnvKeyFetcher.fetchCommonAPIKeys()
+            DispatchQueue.main.async {
+                // Only keep keys that are not already configured in any model of that provider
+                var newEnvKeys: [LLMProvider: String] = [:]
+                let collection = self.containerStore.container.config.llmCollection
+                
+                for (provider, key) in keys {
+                    let hasConfiguredModel = collection.models.contains { m in
+                        m.provider == provider.rawValue && m.apiKey != nil && !m.apiKey!.isEmpty
+                    }
+                    if !hasConfiguredModel {
+                        newEnvKeys[provider] = key
+                    }
+                }
+                self.envKeys = newEnvKeys
+            }
+        }
+        #endif
+    }
+    
+    private func applyEnvKeys() {
+        var collection = containerStore.container.config.llmCollection
+        var updated = false
+        
+        for (provider, apiKey) in envKeys {
+            // Find all models for this provider
+            var providerUpdated = false
+            for i in 0..<collection.models.count {
+                if collection.models[i].provider == provider.rawValue {
+                    if collection.models[i].apiKey == nil || collection.models[i].apiKey!.isEmpty {
+                        collection.models[i].apiKey = apiKey
+                        providerUpdated = true
+                        updated = true
+                    }
+                }
+            }
+            
+            // If provider updated, sync keychain
+            if providerUpdated {
+                // Save any model of this provider to trigger keychain sync in store
+                if let firstUpdated = collection.models.first(where: { $0.provider == provider.rawValue }) {
+                    containerStore.saveLLMModel(firstUpdated)
+                }
+            }
+        }
+        
+        if updated {
+            refreshModels()
+            envKeys.removeAll()
+        }
     }
 
     private func usageRecord(for model: AppConfig.LLMModel) -> ModelUsageRecord? {
@@ -343,12 +476,12 @@ private struct ModelRow: View {
         HStack(alignment: .center, spacing: 16) {
             // Icon
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(uiColor: ChatUIDesign.Color.black80).opacity(0.05))
+                .fill(model.isConfigured ? Color(uiColor: ChatUIDesign.Color.black80).opacity(0.05) : Color(uiColor: ChatUIDesign.Color.black80).opacity(0.02))
                 .frame(width: 40, height: 40)
                 .overlay(
                     Image(systemName: "cpu")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black60))
+                        .foregroundStyle(model.isConfigured ? Color(uiColor: ChatUIDesign.Color.black60) : Color(uiColor: ChatUIDesign.Color.black50))
                 )
 
             // Info
@@ -356,11 +489,11 @@ private struct ModelRow: View {
                 HStack(alignment: .center, spacing: 8) {
                     Text(model.name)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Color(uiColor: ChatUIDesign.Color.offBlack))
+                        .foregroundStyle(model.isConfigured ? Color(uiColor: ChatUIDesign.Color.offBlack) : Color(uiColor: ChatUIDesign.Color.black60))
                         .lineLimit(1)
 
                     if !model.isConfigured {
-                        CompactTag(text: L10n.tr("settings.llmList.status.incomplete"), tone: .warning)
+                        CompactTag(text: L10n.tr("settings.llmList.status.incomplete"), tone: .neutral)
                     }
                 }
 

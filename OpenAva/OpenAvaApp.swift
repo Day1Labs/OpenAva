@@ -21,6 +21,7 @@ enum CatalystGlobalCommand: String {
 
 extension Notification.Name {
     static let openAvaCatalystGlobalCommand = Notification.Name("openAva.catalyst.globalCommand")
+    static let openAvaDidTapPrincipalTitle = Notification.Name("openAva.didTapPrincipalTitle")
 }
 
 enum CatalystGlobalCommandCenter {

@@ -396,7 +396,7 @@
 "common.unknown" = "未知";
 "common.unknownError" = "未知错误";
 
-"settings.llmList.configured.header" = "已配置模型";
+"settings.llmList.configured.header" = "模型";
 "settings.llmList.configured.footer" = "点击模型可设为当前模型，也可直接使用行内操作进行编辑或删除。";
 "settings.llmList.configured.footer.mac" = "点击模型可设为当前模型，也可直接使用行内操作或右键进行编辑或删除。";
 "settings.llmList.addModel" = "添加模型";
@@ -411,6 +411,9 @@
 "settings.llmList.status.active" = "当前";
 "settings.llmList.status.ready" = "可用";
 "settings.llmList.status.incomplete" = "待完善";
+
+"settings.llmList.envDetected.title" = "检测到系统环境变量";
+"settings.llmList.envDetected.message" = "发现包含 %@ 等 API Key，是否一键应用到模型？";
 
 "settings.context.applyTemplate" = "应用模板";
 "settings.context.applyTemplate.confirmTitle" = "应用模板？";

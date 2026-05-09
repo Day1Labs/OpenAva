@@ -32,7 +32,7 @@ struct AppConfig {
         var requestTimeoutMs: Int
 
         var isConfigured: Bool {
-            Self.checkIsConfigured(endpoint: endpoint, model: model)
+            Self.checkIsConfigured(endpoint: endpoint, model: model, apiKey: apiKey)
         }
 
         var resolvedMaxOutputTokens: Int {
@@ -71,8 +71,8 @@ struct AppConfig {
         }
 
         /// Shared helper to check if configuration is valid
-        static func checkIsConfigured(endpoint: URL?, model: String?) -> Bool {
-            endpoint != nil && AppConfig.nonEmpty(model) != nil
+        static func checkIsConfigured(endpoint: URL?, model: String?, apiKey: String?) -> Bool {
+            endpoint != nil && AppConfig.nonEmpty(model) != nil && AppConfig.nonEmpty(apiKey) != nil
         }
     }
 

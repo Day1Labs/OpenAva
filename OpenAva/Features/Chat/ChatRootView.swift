@@ -752,18 +752,12 @@ private struct ChatScreen: View {
             }
             ToolbarItem(placement: .principal) {
                 Button {
-                    onMenuAction?(.openLLM)
+                    NotificationCenter.default.post(name: .openAvaDidTapPrincipalTitle, object: nil)
                 } label: {
-                    VStack(spacing: 1) {
-                        Text(activeProjectWorkspaceName)
-                            .font(.caption2)
-                            .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black50))
-                            .lineLimit(1)
-                        Text(topBarTitle.principalTitleText)
-                            .font(Font(ChatUIDesign.Typography.agentTitle))
-                            .foregroundStyle(Color(uiColor: ChatUIDesign.Color.offBlack))
-                            .lineLimit(1)
-                    }
+                    Text(topBarTitle.principalTitleText)
+                        .font(Font(ChatUIDesign.Typography.agentTitle))
+                        .foregroundStyle(Color(uiColor: ChatUIDesign.Color.offBlack))
+                        .lineLimit(1)
                 }
                 .buttonStyle(.plain)
             }

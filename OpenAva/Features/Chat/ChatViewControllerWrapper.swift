@@ -946,7 +946,7 @@ extension ChatViewControllerWrapper {
 
         func chatViewControllerModelMenu(_ controller: ChatViewController) -> UIMenu? {
             let collection = LLMConfigStore.loadCollection()
-            let models = collection.models
+            let models = collection.models.filter { $0.isConfigured }
 
             var actions: [UIMenuElement] = []
 
@@ -978,9 +978,9 @@ extension ChatViewControllerWrapper {
             }
 
             #if targetEnvironment(macCatalyst)
-            let addModelImage = UIImage(systemName: "plus")
+                let addModelImage = UIImage(systemName: "plus")
             #else
-            let addModelImage: UIImage? = nil
+                let addModelImage: UIImage? = nil
             #endif
             let addModelAction = UIAction(title: L10n.tr("settings.llmList.addModel"), image: addModelImage) { [weak self] _ in
                 self?.onMenuAction?(.openLLM)
