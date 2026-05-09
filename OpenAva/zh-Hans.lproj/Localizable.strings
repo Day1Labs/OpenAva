@@ -429,9 +429,7 @@
 "settings.context.filePurpose.identity" = "定义 Agent 的自我描述、风格和头像元数据。";
 "settings.context.filePurpose.user" = "定义用户偏好、习惯和背景信息。";
 
-"settings.cron.scheduled.header" = "计划任务";
-"settings.cron.scheduled.footer" = "左滑任务可删除。";
-"settings.cron.scheduled.footer.mac" = "右键任务可删除。";
+"settings.cron.scheduled.header" = "已调度的任务";
 "settings.cron.addJob" = "添加任务";
 "settings.cron.delete.confirmTitle" = "删除 Cron 任务？";
 "settings.cron.delete.message" = "删除 \"%@\"？";
@@ -459,7 +457,7 @@
 "settings.cron.agent.unknown" = "未知执行对象";
 "settings.cron.schedule.everyInterval" = "每隔 %@";
 "settings.cron.schedule.at" = "于 %@";
-"settings.cron.empty.title" = "暂无 Cron 任务";
+"settings.cron.empty.title" = "没有定时任务";
 "settings.cron.empty.message" = "点击右上角 + 按钮创建。";
 
 "settings.skills.addSkill" = "添加技能";
@@ -483,7 +481,6 @@
 "settings.skills.enabled" = "已启用";
 "settings.skills.disabled" = "已禁用";
 "settings.skills.unavailable" = "不可用";
-"settings.skills.readOnly" = "只读";
 "settings.skills.feedback.created" = "已创建“%@”。";
 "settings.skills.feedback.saved" = "已保存“%@”。";
 "settings.skills.feedback.deleted" = "已删除“%@”。";

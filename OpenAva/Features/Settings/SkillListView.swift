@@ -1547,8 +1547,8 @@ private struct SkillRow: View {
                 Text(skill.displayName)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Color(uiColor: ChatUIDesign.Color.offBlack))
-                    .lineLimit(1)
-                    .layoutPriority(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(skill.name)
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -1556,16 +1556,9 @@ private struct SkillRow: View {
                     .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black50))
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .minimumScaleFactor(0.8)
 
                 Spacer(minLength: 0)
-
-                if !skill.isEditable {
-                    StatusBadge(
-                        title: L10n.tr("settings.skills.readOnly"),
-                        foreground: Color(uiColor: ChatUIDesign.Color.black60),
-                        background: Color(uiColor: ChatUIDesign.Color.black60).opacity(0.06)
-                    )
-                }
             }
 
             if !skill.description.isEmpty {
@@ -1645,6 +1638,7 @@ private struct StatusBadge: View {
         Text(title)
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(foreground)
+            .lineLimit(1)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
             .background(
@@ -1655,6 +1649,7 @@ private struct StatusBadge: View {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .strokeBorder(foreground.opacity(0.12), lineWidth: 1)
             )
+            .fixedSize(horizontal: true, vertical: true)
     }
 }
 

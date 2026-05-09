@@ -429,8 +429,6 @@
 "settings.context.filePurpose.user" = "Defines user preferences, habits, and background information.";
 
 "settings.cron.scheduled.header" = "Scheduled Jobs";
-"settings.cron.scheduled.footer" = "Swipe left on a job to delete it.";
-"settings.cron.scheduled.footer.mac" = "Right-click a job to delete it.";
 "settings.cron.addJob" = "Add Job";
 "settings.cron.delete.confirmTitle" = "Delete Cron Job?";
 "settings.cron.delete.message" = "Delete \"%@\"?";
@@ -482,7 +480,6 @@
 "settings.skills.enabled" = "Enabled";
 "settings.skills.disabled" = "Disabled";
 "settings.skills.unavailable" = "Unavailable";
-"settings.skills.readOnly" = "Read-only";
 "settings.skills.feedback.created" = "Created \"%@\".";
 "settings.skills.feedback.saved" = "Saved \"%@\".";
 "settings.skills.feedback.deleted" = "Deleted \"%@\".";

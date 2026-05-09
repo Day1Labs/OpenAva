@@ -121,13 +121,6 @@ struct CronListView: View {
                         cronRows
                     }
                     .padding(.horizontal, 16)
-
-                    if let text = scheduledFooterText {
-                        Text(text)
-                            .font(.footnote)
-                            .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black60))
-                            .padding(.horizontal, 16)
-                    }
                 }
             }
             .padding(.vertical, 24)
@@ -171,14 +164,6 @@ struct CronListView: View {
                 }
             }
         }
-    }
-
-    private var scheduledFooterText: String? {
-        #if targetEnvironment(macCatalyst)
-            nil
-        #else
-            L10n.tr("settings.cron.scheduled.footer")
-        #endif
     }
 
     private var deleteDialogBinding: Binding<Bool> {
@@ -1071,10 +1056,12 @@ private struct StatusBadge: View {
         Text(title)
             .font(.system(size: 10, weight: .regular))
             .foregroundStyle(foreground)
+            .lineLimit(1)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .fixedSize(horizontal: true, vertical: true)
     }
 }
 
