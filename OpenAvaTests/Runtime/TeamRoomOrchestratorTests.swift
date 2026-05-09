@@ -1,3 +1,4 @@
+import ChatClient
 import Foundation
 import XCTest
 @testable import OpenAva
@@ -89,6 +90,59 @@ final class TeamRoomOrchestratorTests: XCTestCase {
         XCTAssertEqual(toolMessage.metadata["teamRoomTurnID"], "turn-tool")
         XCTAssertEqual(toolMessage.metadata["teamRoomContext"], "globalTeam")
         XCTAssertEqual(toolMessage.metadata[ConversationSession.PromptInput.sourceMetadataKey], "team_room_agent_tool_result")
+    }
+
+    func testBuildAgentRequestMessagesIncludesSameTurnPriorAgentReplies() async {
+        let session = ConversationSession(
+            id: "team-room-visible-context-test",
+            configuration: .init(storage: DisposableStorageProvider())
+        )
+        let lila = makeAgent(name: "Lila", emoji: "🦞")
+        let nova = makeAgent(name: "Nova", emoji: "🔭")
+        let context = TeamRoomOrchestrator.SubmissionContext(
+            activeContext: .allAgentsTeam,
+            teams: [],
+            agents: [lila, nova],
+            fallbackModelConfig: nil,
+            agentCount: 2
+        )
+        let turnID = "turn-visible"
+
+        _ = session.appendNewMessage(role: .user) { message in
+            message.textContent = "你们相互挑战下各自的观点"
+            message.metadata["teamRoomTurnID"] = turnID
+            message.metadata["teamRoomContext"] = "globalTeam"
+            message.metadata[ConversationSession.PromptInput.sourceMetadataKey] = "user"
+        }
+        TeamRoomOrchestrator.appendAgentReply(
+            .init(agent: lila, text: "Layer 2 是最大机会，但需要防大厂免费开放。", isError: false),
+            to: session,
+            context: context,
+            turnID: turnID
+        )
+
+        let requestMessages = await TeamRoomOrchestrator.shared.buildAgentRequestMessages(
+            roomSession: session,
+            capabilities: [],
+            turnID: turnID
+        )
+        let userTexts = requestMessages.compactMap(Self.userText)
+
+        XCTAssertTrue(userTexts.contains("你们相互挑战下各自的观点"))
+        XCTAssertTrue(userTexts.contains { text in
+            text.contains("[Team Room Agent: 🦞 Lila]")
+                && text.contains("Layer 2 是最大机会")
+        })
+        XCTAssertFalse(requestMessages.contains { message in
+            if case .assistant = message { return true }
+            return false
+        })
+    }
+
+    private static func userText(from message: ChatRequestBody.Message) -> String? {
+        guard case let .user(content, _) = message else { return nil }
+        guard case let .text(text) = content else { return nil }
+        return text
     }
 
     private func makeAgent(name: String, emoji: String) -> AgentProfile {

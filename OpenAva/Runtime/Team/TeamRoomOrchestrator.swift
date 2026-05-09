@@ -439,17 +439,18 @@ final class TeamRoomOrchestrator {
         return enabledTools.isEmpty ? nil : enabledTools
     }
 
-    private func buildAgentRequestMessages(
+    func buildAgentRequestMessages(
         roomSession: ConversationSession,
         capabilities: Set<ModelCapability>,
         turnID: String
     ) async -> [ChatRequestBody.Message] {
         var requestMessages = roomSession.historyMessages()
-            .filter { message in
-                message.metadata["teamRoomTurnID"] != turnID || message.role == .user
-            }
             .flatMap { message in
-                roomSession.buildRequestMessages(from: message, capabilities: capabilities)
+                buildTeamRoomRequestMessages(
+                    from: message,
+                    roomSession: roomSession,
+                    capabilities: capabilities
+                )
             }
 
         if let instructionMessage = await roomSession.buildInstructionRequestMessage(
@@ -468,6 +469,38 @@ final class TeamRoomOrchestrator {
         }
 
         return requestMessages
+    }
+
+    private func buildTeamRoomRequestMessages(
+        from message: ConversationMessage,
+        roomSession: ConversationSession,
+        capabilities: Set<ModelCapability>
+    ) -> [ChatRequestBody.Message] {
+        let source = message.metadata[ConversationSession.PromptInput.sourceMetadataKey]
+        if source == "team_room_agent_tool_result" {
+            return []
+        }
+
+        if message.role == .assistant,
+           source == "team_room_agent_reply" || source == "team_room_agent_error"
+        {
+            return teamAgentTranscriptMessages(from: message)
+        }
+
+        return roomSession.buildRequestMessages(from: message, capabilities: capabilities)
+    }
+
+    private func teamAgentTranscriptMessages(from message: ConversationMessage) -> [ChatRequestBody.Message] {
+        let text = message.textContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return [] }
+
+        let agentName = message.metadata["agentName"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let agentEmoji = message.metadata["agentEmoji"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = agentName?.isEmpty == false ? agentName! : "Agent"
+        let speaker = agentEmoji?.isEmpty == false ? "\(agentEmoji!) \(displayName)" : displayName
+        return [.user(content: .text("[Team Room Agent: \(speaker)]\n\(text)"))]
     }
 
     private func makeAgentSystemPrompt(
