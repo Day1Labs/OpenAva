@@ -130,8 +130,13 @@ extension InputEditor {
             width: permissionWidth,
             height: pillHeight
         )
-        let permissionTitle = permissionButton.currentTitle ?? permissionButton.configuration?.title
-        permissionButton.isHidden = permissionWidth < 44 || (permissionTitle?.isEmpty ?? true)
+
+        let permissionHasContent = !(permissionButton.accessibilityLabel?.isEmpty ?? true)
+        #if targetEnvironment(macCatalyst)
+            permissionButton.isHidden = permissionWidth < 44 || !permissionHasContent
+        #else
+            permissionButton.isHidden = permissionWidth < 20 || !permissionHasContent
+        #endif
 
         stopVoiceButton.frame = sendButton.frame
         cancelVoiceButton.frame = voiceButton.frame

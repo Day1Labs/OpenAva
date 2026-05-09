@@ -8,7 +8,6 @@ import Litext
 import UIKit
 
 final class ReasoningContentView: MessageListRowView {
-    private lazy var indicator: UIView = .init()
     private lazy var textContainer: UIView = .init().with {
         $0.backgroundColor = .secondarySystemFill.withAlphaComponent(0.08)
         $0.layer.cornerRadius = 8
@@ -33,7 +32,6 @@ final class ReasoningContentView: MessageListRowView {
     static let unrevealedTileHeight: CGFloat = 28
     static let spacing: CGFloat = 8
     private static let tileContentLeading: CGFloat = 8
-    private static let indicatorWidth: CGFloat = 1
 
     var thinkingDuration: TimeInterval = 0 {
         didSet {
@@ -88,11 +86,6 @@ final class ReasoningContentView: MessageListRowView {
         thinkingTile.addGestureRecognizer(tapGesture)
         contentView.addSubview(thinkingTile)
 
-        indicator.layer.cornerRadius = 0.5
-        indicator.backgroundColor = .tertiaryLabel
-        indicator.alpha = 1.0
-        contentView.addSubview(indicator)
-
         contentView.addSubview(textContainer)
         textContainer.addSubview(textView)
     }
@@ -119,20 +112,7 @@ final class ReasoningContentView: MessageListRowView {
         )
 
         let contentLeading = thinkingTile.frame.minX + Self.tileContentLeading + 14
-        let indicatorLeading = thinkingTile.frame.minX + 6.5
         let indicatorY = thinkingTile.frame.maxY + Self.spacing
-        if isRevealed {
-            indicator.isHidden = false
-            indicator.frame = .init(
-                x: indicatorLeading,
-                y: indicatorY,
-                width: Self.indicatorWidth,
-                height: max(0, contentView.bounds.height - indicatorY)
-            )
-        } else {
-            indicator.isHidden = true
-            indicator.frame = .zero
-        }
 
         let containerOrigin = CGPoint(
             x: contentLeading,

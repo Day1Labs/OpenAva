@@ -41,11 +41,11 @@ final class InputEditor: EditorSectionView {
             button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
             button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -2, bottom: 0, right: 4)
         }
-        
+
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }
-        
+
         button.showsMenuAsPrimaryAction = true
         return button
     }()
@@ -373,21 +373,34 @@ final class InputEditor: EditorSectionView {
     }
 
     func setPermissionTitle(_ title: String?, systemImageName: String?) {
-        let image = systemImageName.flatMap { UIImage(systemName: $0)?.withRenderingMode(.alwaysTemplate) }
+        let image = systemImageName.flatMap {
+            let config = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+            return UIImage(systemName: $0, withConfiguration: config)?.withRenderingMode(.alwaysTemplate)
+        }
+
+        let displayTitle: String?
+        #if targetEnvironment(macCatalyst)
+            displayTitle = title
+        #else
+            displayTitle = nil
+        #endif
+
         if #available(iOS 15.0, *) {
             var configuration = permissionButton.configuration ?? .plain()
-            if let title, !title.isEmpty {
-                var attributedTitle = AttributedString(title)
+            if let displayTitle, !displayTitle.isEmpty {
+                var attributedTitle = AttributedString(displayTitle)
                 attributedTitle.font = UIFont.systemFont(ofSize: 14, weight: .medium)
                 configuration.attributedTitle = attributedTitle
+                configuration.imagePadding = 6
             } else {
                 configuration.attributedTitle = nil
                 configuration.title = nil
+                configuration.imagePadding = 0
             }
             configuration.image = image
             permissionButton.configuration = configuration
         } else {
-            permissionButton.setTitle(title, for: .normal)
+            permissionButton.setTitle(displayTitle, for: .normal)
             permissionButton.setImage(image, for: .normal)
         }
         permissionButton.accessibilityLabel = title

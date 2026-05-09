@@ -10,7 +10,6 @@ import MarkdownView
 import UIKit
 
 final class ToolResultContentView: MessageListRowView {
-    private lazy var indicator: UIView = .init()
     private lazy var scrollView: ToolResultScrollView = .init().with {
         $0.showsVerticalScrollIndicator = true
         $0.showsHorizontalScrollIndicator = false
@@ -23,15 +22,9 @@ final class ToolResultContentView: MessageListRowView {
     private var sectionViews: [SectionView] = []
 
     private static let contentLeading: CGFloat = 22
-    private static let indicatorWidth: CGFloat = 1
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-
-        indicator.layer.cornerRadius = 0.5
-        indicator.backgroundColor = .tertiaryLabel
-        indicator.alpha = 1.0
-        contentView.addSubview(indicator)
 
         contentView.addSubview(scrollView)
     }
@@ -48,13 +41,13 @@ final class ToolResultContentView: MessageListRowView {
         var copySections: [(String, String)] = []
 
         if representation.hasParameters {
-            let section = SectionView(title: String.localized("Tool Arguments"), content: representation.formattedParameters, theme: theme)
+            let section = SectionView(title: String.localized("Tool Arguments"), iconName: "curlybraces", content: representation.formattedParameters, theme: theme)
             scrollView.addSubview(section)
             sectionViews.append(section)
             copySections.append((String.localized("Tool Arguments"), representation.formattedParameters))
         }
         if representation.hasResult {
-            let section = SectionView(title: String.localized("Tool Result"), content: representation.formattedResult, theme: theme)
+            let section = SectionView(title: String.localized("Tool Result"), iconName: "doc.plaintext", content: representation.formattedResult, theme: theme)
             scrollView.addSubview(section)
             sectionViews.append(section)
             copySections.append((String.localized("Tool Result"), representation.formattedResult))
@@ -73,13 +66,6 @@ final class ToolResultContentView: MessageListRowView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-
-        indicator.frame = .init(
-            x: 6.5,
-            y: 0,
-            width: Self.indicatorWidth,
-            height: contentView.bounds.height
-        )
 
         let textX = Self.contentLeading
         let textWidth = max(0, contentView.bounds.width - textX)
@@ -141,16 +127,23 @@ private class SectionView: UIView {
     }
 
     let titleLabel = UILabel()
+    let iconView = UIImageView()
     let codeContainer = UIView()
     let codeLabel = LTXLabel()
     let theme: MarkdownTheme
     let content: String
     private var metricsCache: TextMetricsCache?
 
-    init(title: String, content: String, theme: MarkdownTheme) {
+    init(title: String, iconName: String, content: String, theme: MarkdownTheme) {
         self.theme = theme
         self.content = content
         super.init(frame: .zero)
+
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        iconView.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
+        iconView.tintColor = theme.colors.body.withAlphaComponent(0.6)
+        iconView.contentMode = .center
+        addSubview(iconView)
 
         titleLabel.text = title
         titleLabel.font = theme.fonts.footnote.bold
@@ -199,7 +192,12 @@ private class SectionView: UIView {
         let width = bounds.width
         let metrics = textMetrics(for: width)
         let titleSize = metrics.titleSize
-        titleLabel.frame = CGRect(x: 0, y: 0, width: width, height: titleSize.height)
+
+        let iconSize: CGFloat = 14
+        iconView.frame = CGRect(x: 0, y: (titleSize.height - iconSize) / 2, width: iconSize, height: iconSize)
+
+        let titleX = iconSize + 4
+        titleLabel.frame = CGRect(x: titleX, y: 0, width: width - titleX, height: titleSize.height)
 
         let codeWidth = max(0, width - 16)
         let codeHeight = metrics.codeHeight
@@ -216,7 +214,8 @@ private class SectionView: UIView {
             return metricsCache
         }
 
-        let titleSize = titleLabel.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        let titleX: CGFloat = 14 + 4
+        let titleSize = titleLabel.sizeThatFits(CGSize(width: max(0, width - titleX), height: .greatestFiniteMagnitude))
         let codeWidth = max(0, width - 16)
         let codeHeight: CGFloat
 
