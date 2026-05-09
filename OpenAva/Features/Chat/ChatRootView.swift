@@ -29,7 +29,6 @@ import UserNotifications
 
 struct ChatRootView: View {
     @Environment(\.appContainerStore) private var containerStore
-    @Environment(\.appWindowCoordinator) private var windowCoordinator
     @Environment(\.openWindow) private var openWindow
     @Environment(\.scenePhase) private var scenePhase
     // Keep destination navigation state at root so config-driven ChatScreen
@@ -480,8 +479,7 @@ struct ChatRootView: View {
 
     private func openLocalAgentCreation() {
         #if targetEnvironment(macCatalyst)
-            windowCoordinator.openAgentCreation()
-            activateOrOpenWindow(id: AppWindowID.agentCreation)
+            openWindow(id: AppWindowID.agentCreation)
         #else
             showsLocalAgentCreation = true
         #endif
@@ -533,34 +531,6 @@ struct ChatRootView: View {
             }
         #endif
     }
-
-    #if targetEnvironment(macCatalyst)
-        private func activateOrOpenWindow(id: String) {
-            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            let existing = scenes.first(where: { scene in
-                scene.session.stateRestorationActivity?.targetContentIdentifier == id
-            })
-
-            if let existing = existing {
-                UIApplication.shared.requestSceneSessionActivation(existing.session, userActivity: nil, options: nil, errorHandler: nil)
-            } else {
-                let targetTitle: String
-                switch id {
-                case AppWindowID.settings:
-                    targetTitle = L10n.tr("window.settings.title")
-                case AppWindowID.agentCreation:
-                    targetTitle = L10n.tr("window.agentCreation.title")
-                default:
-                    targetTitle = ""
-                }
-                if !targetTitle.isEmpty, let titleMatch = scenes.first(where: { $0.title == targetTitle }) {
-                    UIApplication.shared.requestSceneSessionActivation(titleMatch.session, userActivity: nil, options: nil, errorHandler: nil)
-                } else {
-                    openWindow(id: id)
-                }
-            }
-        }
-    #endif
 
     private func triggerHeartbeatNow() {
         updateHeartbeatService()

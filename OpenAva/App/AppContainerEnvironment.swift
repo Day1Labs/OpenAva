@@ -18,13 +18,4 @@ extension EnvironmentValues {
     var appLocalization: LocalizationService {
         appContainerStore.container.services.localization
     }
-
-    var appWindowCoordinator: AppWindowCoordinator {
-        get { self[AppWindowCoordinatorEnvironmentKey.self] }
-        set { self[AppWindowCoordinatorEnvironmentKey.self] = newValue }
-    }
-}
-
-private struct AppWindowCoordinatorEnvironmentKey: EnvironmentKey {
-    static let defaultValue = AppWindowCoordinator()
 }

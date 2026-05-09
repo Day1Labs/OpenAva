@@ -46,19 +46,16 @@ enum CatalystGlobalCommandCenter {
 struct OpenAvaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var containerStore = AppContainerStore(container: .makeDefault())
-    @State private var windowCoordinator = AppWindowCoordinator()
 
     var body: some Scene {
         WindowGroup {
             AppRootView()
-                .environment(\.appWindowCoordinator, windowCoordinator)
         }
 
         #if targetEnvironment(macCatalyst)
             WindowGroup(L10n.tr("window.settings.title"), id: AppWindowID.settings, for: String.self) { $sectionID in
                 SettingsWindowRootView(sectionID: $sectionID)
                     .environment(\.appContainerStore, containerStore)
-                    .environment(\.appWindowCoordinator, windowCoordinator)
             }
             defaultValue: {
                 SettingsWindowSection.llm.rawValue
@@ -67,16 +64,7 @@ struct OpenAvaApp: App {
 
             WindowGroup(L10n.tr("window.agentCreation.title"), id: AppWindowID.agentCreation) {
                 AgentCreationWindowRootView()
-                    .id(windowCoordinator.agentCreationRequestID)
                     .environment(\.appContainerStore, containerStore)
-                    .environment(\.appWindowCoordinator, windowCoordinator)
-                    .onAppear {
-                        if let windowScene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.title == L10n.tr("window.agentCreation.title") }) {
-                            let activity = NSUserActivity(activityType: "openava.window.\(AppWindowID.agentCreation)")
-                            activity.targetContentIdentifier = AppWindowID.agentCreation
-                            windowScene.session.stateRestorationActivity = activity
-                        }
-                    }
             }
             .handlesExternalEvents(matching: [AppWindowID.agentCreation])
         #endif
@@ -110,7 +98,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         UNUserNotificationCenter.current().delegate = self
 
         #if targetEnvironment(macCatalyst)
-            CatalystWindowCoordinator.shared.install()
+            installCatalystWindowStyling()
             RemoteControlService.shared.startIfNeeded()
             configureCatalystBarButtonAppearance()
         #endif
@@ -168,40 +156,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
     }
 
-    private final class CatalystWindowCoordinator {
-        static let shared = CatalystWindowCoordinator()
-
-        private var sceneObservers: [NSObjectProtocol] = []
-
-        private init() {}
-
-        func install() {
-            guard sceneObservers.isEmpty else { return }
-            apply(to: UIApplication.shared.connectedScenes)
-            let center = NotificationCenter.default
-            sceneObservers.append(
-                center.addObserver(forName: UIScene.willConnectNotification,
-                                   object: nil, queue: .main)
-                { [weak self] n in
-                    self?.apply(from: n.object)
-                }
-            )
-            sceneObservers.append(
-                center.addObserver(forName: UIScene.didActivateNotification,
-                                   object: nil, queue: .main)
-                { [weak self] n in
-                    self?.apply(from: n.object)
-                }
-            )
-        }
-
-        private func apply(to scenes: Set<UIScene>) {
-            scenes.forEach { apply(from: $0) }
-        }
-
-        private func apply(from object: Any?) {
+    private func installCatalystWindowStyling() {
+        let apply: (Any?) -> Void = { object in
             guard let scene = object as? UIWindowScene else { return }
-
             if let titlebar = scene.titlebar {
                 titlebar.titleVisibility = .hidden
                 titlebar.toolbarStyle = .automatic
@@ -209,10 +166,19 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
             }
             scene.sizeRestrictions?.minimumSize = CGSize(width: 600, height: 440)
             scene.sizeRestrictions?.maximumSize = CGSize(width: 4096, height: 4096)
-
             for window in scene.windows {
                 window.backgroundColor = ChatUIDesign.Color.warmCream
             }
+        }
+
+        UIApplication.shared.connectedScenes.forEach { apply($0) }
+
+        let center = NotificationCenter.default
+        center.addObserver(forName: UIScene.willConnectNotification, object: nil, queue: .main) { n in
+            apply(n.object)
+        }
+        center.addObserver(forName: UIScene.didActivateNotification, object: nil, queue: .main) { n in
+            apply(n.object)
         }
     }
 

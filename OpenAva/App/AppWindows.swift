@@ -1,5 +1,3 @@
-import Combine
-import Foundation
 import SwiftUI
 
 enum AppWindowID {
@@ -28,16 +26,6 @@ enum SettingsWindowSection: String, CaseIterable, Hashable, Identifiable {
     }
 }
 
-final class AppWindowCoordinator: ObservableObject {
-    @Published private(set) var agentCreationRequestID: Int = 0
-    @Published private(set) var agentCreationMode: AgentCreationViewModel.CreationMode = .singleAgent
-
-    func openAgentCreation() {
-        agentCreationMode = .singleAgent
-        agentCreationRequestID &+= 1
-    }
-}
-
 struct SettingsWindowRootView: View {
     @Binding private var sectionID: String
 
@@ -55,11 +43,7 @@ struct SettingsWindowRootView: View {
     }
 
     private var section: SettingsWindowSection {
-        guard let section = SettingsWindowSection(rawValue: sectionID)
-        else {
-            return .llm
-        }
-        return section
+        SettingsWindowSection(rawValue: sectionID) ?? .llm
     }
 
     @ViewBuilder
@@ -77,16 +61,12 @@ struct SettingsWindowRootView: View {
 
 struct AgentCreationWindowRootView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.appWindowCoordinator) private var windowCoordinator
 
     var body: some View {
         NavigationStack {
-            AgentCreationView(
-                initialMode: windowCoordinator.agentCreationMode,
-                onComplete: {
-                    dismiss()
-                }
-            )
+            AgentCreationView {
+                dismiss()
+            }
         }
         .background(Color.white)
     }
