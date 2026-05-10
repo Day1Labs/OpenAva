@@ -123,9 +123,12 @@ final class HeartbeatRuntime: HeartbeatRuntimeControlling {
     }
 
     func apply(configuration: HeartbeatRuntimeConfiguration, schedulingEnabled: Bool) {
+        let shouldRestartLoop = self.configuration != configuration || self.schedulingEnabled != schedulingEnabled
         self.configuration = configuration
         self.schedulingEnabled = schedulingEnabled
-        restartLoopIfNeeded()
+        if shouldRestartLoop {
+            restartLoopIfNeeded()
+        }
 
         Task { @MainActor [weak self] in
             await self?.processPendingCronTriggers()
