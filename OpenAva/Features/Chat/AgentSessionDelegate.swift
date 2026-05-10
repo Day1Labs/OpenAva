@@ -15,7 +15,6 @@ final class AgentSessionDelegate: SessionDelegate, @unchecked Sendable {
         #endif
     }
 
-    private let sessionID: String
     private let supportRootURL: URL
     private let backgroundCoordinator = BackgroundExecutionCoordinator.shared
     private let sessionLogStorage: any StorageProvider
@@ -29,7 +28,6 @@ final class AgentSessionDelegate: SessionDelegate, @unchecked Sendable {
     private let agentEmoji: String
 
     init(
-        sessionID: String,
         supportRootURL: URL?,
         workspaceRootURL: URL?,
         chatClient: (any ChatClient)?,
@@ -41,7 +39,6 @@ final class AgentSessionDelegate: SessionDelegate, @unchecked Sendable {
         guard let supportRootURL, let workspaceRootURL else {
             preconditionFailure("AgentSessionDelegate requires explicit project workspace and agent context URLs.")
         }
-        self.sessionID = sessionID
         self.agentName = agentName
         self.agentEmoji = agentEmoji
         self.shouldExtractDurableMemory = shouldExtractDurableMemory

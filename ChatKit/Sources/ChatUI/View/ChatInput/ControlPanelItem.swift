@@ -24,10 +24,10 @@ public struct ControlPanelItem {
 public extension ControlPanelItem {
     /// Default control panel items: Camera (iOS only), Photo, File.
     static var defaults: [ControlPanelItem] {
-        var items: [ControlPanelItem] = []
-        items.append(.init(id: "camera", title: String.localized("Camera"), icon: "camera", action: {}))
-        items.append(.init(id: "photo", title: String.localized("Photo"), icon: "image.up", action: {}))
-        items.append(.init(id: "file", title: String.localized("File"), icon: "attachment", action: {}))
-        return items
+        [
+            .init(id: "camera", title: String.localized("Camera"), icon: "camera", action: {}),
+            .init(id: "photo", title: String.localized("Photo"), icon: "image.up", action: {}),
+            .init(id: "file", title: String.localized("File"), icon: "attachment", action: {}),
+        ]
     }
 }

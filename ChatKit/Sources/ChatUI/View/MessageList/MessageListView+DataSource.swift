@@ -356,11 +356,6 @@ extension MessageListView {
         // Reset per-entry leading inset table; rebuilt as entries are emitted.
         entryLeadingInsets.removeAll(keepingCapacity: true)
 
-        // Current horizontal inset applied to subsequent entries.
-        // Pushed to `agentContentLeadingOffset` while inside an agent turn
-        // (i.e., after an agent header), reset to 0 on non-agent boundaries.
-        var currentLeadingInset: CGFloat = 0
-
         func append(_ entry: Entry, leadingInset: CGFloat) {
             entries.append(entry)
             if leadingInset != 0 {
@@ -488,7 +483,7 @@ extension MessageListView {
             return false
         }
 
-        func assistantMessageID(forToolResult toolCallID: String, startingAt index: Int) -> String? {
+        func assistantMessage(forToolResult toolCallID: String, startingAt index: Int) -> ConversationMessage? {
             if index > 0 {
                 for i in stride(from: index - 1, through: 0, by: -1) {
                     let candidate = messages[i]
@@ -498,7 +493,7 @@ extension MessageListView {
                         return call.id == toolCallID
                     }
                     if hasCall {
-                        return candidate.id
+                        return candidate
                     }
                 }
             }
@@ -508,7 +503,7 @@ extension MessageListView {
                     guard case let .toolCall(call) = part else { return false }
                     return call.id == toolCallID
                 }
-            })?.id
+            })
         }
 
         func firstToolResultMessage(for toolCallID: String) -> (messageID: String, result: ToolResultContentPart)? {
@@ -561,8 +556,7 @@ extension MessageListView {
                     guard case let .toolResult(value) = part else { return nil }
                     return value
                 }).first,
-                    let assistantID = assistantMessageID(forToolResult: toolResult.toolCallID, startingAt: messageIndex),
-                    let assistantMessage = messages.first(where: { $0.id == assistantID })
+                    let assistantMessage = assistantMessage(forToolResult: toolResult.toolCallID, startingAt: messageIndex)
                 {
                     messageLeadingInset = MessageListView.hasAgentIdentity(
                         name: assistantMessage.metadata["agentName"],
@@ -574,8 +568,6 @@ extension MessageListView {
             default:
                 messageLeadingInset = 0
             }
-            currentLeadingInset = messageLeadingInset
-
             let textContent = message.textContent
             let isThinking = isReasoningStillStreaming(in: message)
             var reasoningDuration: TimeInterval = 0
@@ -675,10 +667,10 @@ extension MessageListView {
                     }
                 }
                 if !attachmentItems.isEmpty {
-                    append(.userAttachment(message.id, .init(items: attachmentItems, isTrailingAligned: true)), leadingInset: currentLeadingInset)
+                    append(.userAttachment(message.id, .init(items: attachmentItems, isTrailingAligned: true)), leadingInset: messageLeadingInset)
                 }
                 if !textContent.isEmpty {
-                    append(.userContent(message.id, representation), leadingInset: currentLeadingInset)
+                    append(.userContent(message.id, representation), leadingInset: messageLeadingInset)
                 }
 
             case .assistant:
@@ -700,7 +692,7 @@ extension MessageListView {
                             agentName: message.metadata["agentName"],
                             agentEmoji: message.metadata["agentEmoji"]
                         )
-                        append(.reasoningContent(reasoningPart.id, reasoningRep), leadingInset: currentLeadingInset)
+                        append(.reasoningContent(reasoningPart.id, reasoningRep), leadingInset: messageLeadingInset)
                     case let .toolCall(tc):
                         let matchingToolResultMessage = firstToolResultMessage(for: tc.id)
                         let matchingResult = matchingToolResultMessage?.result
@@ -720,7 +712,7 @@ extension MessageListView {
                                     isExpanded: !(matchingResult?.isCollapsed ?? true)
                                 )
                             ),
-                            leadingInset: currentLeadingInset
+                            leadingInset: messageLeadingInset
                         )
                         if let matchingResult, !matchingResult.isCollapsed {
                             let representation = ToolResultRepresentation(
@@ -730,7 +722,7 @@ extension MessageListView {
                             if !representation.isEmpty {
                                 append(
                                     .toolResultContent(matchingResult.id, representation),
-                                    leadingInset: currentLeadingInset
+                                    leadingInset: messageLeadingInset
                                 )
                                 inlineRenderedToolResultIDs.insert(matchingResult.id)
                             }
@@ -753,7 +745,7 @@ extension MessageListView {
                                 agentName: message.metadata["agentName"],
                                 agentEmoji: message.metadata["agentEmoji"]
                             )
-                            append(.responseContent(id, textRep), leadingInset: currentLeadingInset)
+                            append(.responseContent(id, textRep), leadingInset: messageLeadingInset)
                         }
 
                         func appendChart(_ spec: ChartSpec, rawBlock: String, id: String) {
@@ -764,7 +756,7 @@ extension MessageListView {
                                 spec: spec,
                                 rawBlock: rawBlock
                             )
-                            append(.chartContent(id, chartRep), leadingInset: currentLeadingInset)
+                            append(.chartContent(id, chartRep), leadingInset: messageLeadingInset)
                         }
 
                         func appendMap(_ spec: MapSpec, rawBlock: String, id: String) {
@@ -775,7 +767,7 @@ extension MessageListView {
                                 spec: spec,
                                 rawBlock: rawBlock
                             )
-                            append(.mapContent(id, mapRep), leadingInset: currentLeadingInset)
+                            append(.mapContent(id, mapRep), leadingInset: messageLeadingInset)
                         }
 
                         func appendMedia(_ media: MarkdownMediaPayload, id: String) {
@@ -787,7 +779,7 @@ extension MessageListView {
                                 url: media.url,
                                 altText: media.altText
                             )
-                            append(.mediaContent(id, mediaRep), leadingInset: currentLeadingInset)
+                            append(.mediaContent(id, mediaRep), leadingInset: messageLeadingInset)
                         }
 
                         func appendMermaid(_ source: String, rawBlock: String, id: String) {
@@ -798,7 +790,7 @@ extension MessageListView {
                                 source: source,
                                 rawBlock: rawBlock
                             )
-                            append(.mermaidContent(id, mermaidRep), leadingInset: currentLeadingInset)
+                            append(.mermaidContent(id, mermaidRep), leadingInset: messageLeadingInset)
                         }
 
                         let segments = ChartMarkdownParser.parseSegments(from: textPart.text)
@@ -879,7 +871,7 @@ extension MessageListView {
                                 "\(message.id).file.\(filePart.id)",
                                 .init(items: [attachment], isTrailingAligned: false)
                             ),
-                            leadingInset: currentLeadingInset
+                            leadingInset: messageLeadingInset
                         )
                     case let .toolResult(toolResult):
                         continue
@@ -897,8 +889,7 @@ extension MessageListView {
                 }
                 guard !toolResult.isCollapsed else { break }
                 guard !inlineRenderedToolResultIDs.contains(toolResult.id) else { break }
-                let assistantID = assistantMessageID(forToolResult: toolResult.toolCallID, startingAt: messageIndex) ?? message.id
-                let assistantMessage = messages.first(where: { $0.id == assistantID })
+                let assistantMessage = assistantMessage(forToolResult: toolResult.toolCallID, startingAt: messageIndex)
                 let toolCall = assistantMessage?.parts.first { part in
                     guard case let .toolCall(value) = part else { return false }
                     return value.id == toolResult.toolCallID
@@ -915,7 +906,7 @@ extension MessageListView {
                     result: toolResult.result
                 )
                 guard !representation.isEmpty else { break }
-                append(.toolResultContent(toolResult.id, representation), leadingInset: currentLeadingInset)
+                append(.toolResultContent(toolResult.id, representation), leadingInset: messageLeadingInset)
 
             case .system:
                 if message.isTodoList, let metadata = message.todoListMetadata {
@@ -929,7 +920,7 @@ extension MessageListView {
                                 metadata: metadata
                             )
                         ),
-                        leadingInset: currentLeadingInset
+                        leadingInset: messageLeadingInset
                     )
                     continue
                 }
@@ -957,7 +948,7 @@ extension MessageListView {
                                 isExpanded: expandedSubAgentMessageIDs.contains(message.id)
                             )
                         ),
-                        leadingInset: currentLeadingInset
+                        leadingInset: messageLeadingInset
                     )
                     continue
                 }
@@ -973,7 +964,7 @@ extension MessageListView {
                             detail: compactBoundaryDetail(for: message.compactBoundaryMetadata)
                         )
                     ),
-                    leadingInset: currentLeadingInset
+                    leadingInset: messageLeadingInset
                 )
 
             default:

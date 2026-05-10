@@ -12,7 +12,7 @@ import UIKit
     import AppKit
 #endif
 
-private let logger = Logger(subsystem: "com.day1-labs.openava", category: "chat.stop.ui")
+private let chatInputLogger = Logger(subsystem: "com.day1-labs.openava", category: "chat.input")
 
 /// A complete chat view controller that provides message display and user input.
 ///
@@ -188,6 +188,7 @@ open class ChatViewController: UIViewController {
 
     public private(set) var chatInputView = ChatInputView()
     public private(set) var messageListView = MessageListView()
+    private var lastLoggedPromptInputExecuting: Bool?
     public weak var menuDelegate: ChatViewControllerMenuDelegate? {
         didSet {
             guard isViewLoaded else { return }
@@ -332,9 +333,12 @@ open class ChatViewController: UIViewController {
 
     private func setPromptInputExecuting(_ isExecuting: Bool) {
         guard isViewLoaded else { return }
-        logger.notice(
-            "ui query activity changed session=\(self.sessionID, privacy: .public) active=\(String(isExecuting), privacy: .public)"
-        )
+        if lastLoggedPromptInputExecuting != isExecuting {
+            chatInputLogger.debug(
+                "prompt input execution state changed session=\(self.sessionID, privacy: .public) isExecuting=\(String(isExecuting), privacy: .public)"
+            )
+            lastLoggedPromptInputExecuting = isExecuting
+        }
         chatInputView.setExecuting(isExecuting)
     }
 
@@ -1027,11 +1031,11 @@ open class ChatViewController: UIViewController {
     }
 
     private func applyHeaderStateToNavigationTitle() {
-        let title = ChatTopBar.title(
-            agentName: headerState.agentName,
-            agentEmoji: headerState.agentEmoji,
-            modelName: headerState.modelName
-        ).principalTitleText
+        let title = ChatTopBar.Title(
+            displayName: headerState.agentName,
+            displayEmoji: headerState.agentEmoji,
+            identityKind: .agent
+        ).principalDisplayText
 
         if let titleLabel = customTitleView.viewWithTag(101) as? UILabel {
             titleLabel.text = title

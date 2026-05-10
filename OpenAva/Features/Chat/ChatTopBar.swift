@@ -12,18 +12,12 @@ enum ChatTopBar {
 
         let displayName: String
         let displayEmoji: String
-        let modelName: String
         let identityKind: IdentityKind
 
-        init(displayName: String, displayEmoji: String?, modelName: String, identityKind: IdentityKind) {
+        init(displayName: String, displayEmoji: String?, identityKind: IdentityKind) {
             self.displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
             self.displayEmoji = (displayEmoji ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            self.modelName = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
             self.identityKind = identityKind
-        }
-
-        init(agentName: String, agentEmoji: String?, modelName: String) {
-            self.init(displayName: agentName, displayEmoji: agentEmoji, modelName: modelName, identityKind: .agent)
         }
 
         var resolvedDisplayName: String {
@@ -38,14 +32,6 @@ enum ChatTopBar {
 
         var principalDisplayText: String {
             displayEmoji.isEmpty ? resolvedDisplayName : "\(displayEmoji) \(resolvedDisplayName)"
-        }
-
-        var resolvedModelName: String {
-            modelName.isEmpty ? L10n.tr("chat.selectedModel.notSelected") : modelName
-        }
-
-        var principalTitleText: String {
-            principalDisplayText
         }
     }
 
@@ -63,7 +49,6 @@ enum ChatTopBar {
         let title: String
         let emoji: String
         let isSelected: Bool
-        let isEnabled: Bool
 
         var displayTitle: String {
             emoji.isEmpty ? title : "\(emoji) \(title)"
@@ -83,10 +68,6 @@ enum ChatTopBar {
         let title: String
         let subtitle: String
         let isSelected: Bool
-
-        var displayTitle: String {
-            subtitle.isEmpty ? title : "\(title) — \(subtitle)"
-        }
     }
 
     enum Destination: String, Equatable {
@@ -114,28 +95,18 @@ enum ChatTopBar {
         let kind: Kind
         let title: String
         let systemImage: String
-        let isDestructive: Bool
     }
 
-    static func title(agentName: String, agentEmoji: String?, modelName: String) -> Title {
-        Title(agentName: agentName, agentEmoji: agentEmoji, modelName: modelName)
-    }
-
-    static func title(displayName: String, displayEmoji: String?, modelName: String, identityKind: Title.IdentityKind) -> Title {
-        Title(displayName: displayName, displayEmoji: displayEmoji, modelName: modelName, identityKind: identityKind)
-    }
-
-    static func title(displayName: String, displayEmoji: String?, modelName: String, activeContext: ActiveSessionContext) -> Title {
+    static func title(displayName: String, displayEmoji: String?, activeContext: ActiveSessionContext) -> Title {
         let identityKind: Title.IdentityKind = switch activeContext {
         case .allAgentsTeam, .team:
             .teamRoom
         case .agent:
             .agent
         }
-        return title(
+        return Title(
             displayName: displayName,
             displayEmoji: displayEmoji,
-            modelName: modelName,
             identityKind: identityKind
         )
     }
@@ -185,8 +156,7 @@ enum ChatTopBar {
             kind: .allAgentsTeam,
             title: L10n.tr("chat.menu.allAgentsTeam"),
             emoji: "",
-            isSelected: activeContext == .allAgentsTeam,
-            isEnabled: true
+            isSelected: activeContext == .allAgentsTeam
         ))
 
         for team in teams {
@@ -197,8 +167,7 @@ enum ChatTopBar {
                 kind: .team(team.id),
                 title: title.isEmpty ? L10n.tr("chat.activeTeam.fallbackName") : title,
                 emoji: emoji,
-                isSelected: activeContext == .team(team.id),
-                isEnabled: true
+                isSelected: activeContext == .team(team.id)
             ))
         }
 
@@ -210,8 +179,7 @@ enum ChatTopBar {
                 kind: .agent(agent.id),
                 title: title.isEmpty ? L10n.tr("chat.activeAgent.fallbackName") : title,
                 emoji: emoji,
-                isSelected: activeContext == .agent(agent.id),
-                isEnabled: true
+                isSelected: activeContext == .agent(agent.id)
             ))
         }
 
@@ -221,8 +189,7 @@ enum ChatTopBar {
                 kind: .empty,
                 title: L10n.tr("chat.menu.noAgentsAvailable"),
                 emoji: "",
-                isSelected: false,
-                isEnabled: false
+                isSelected: false
             ))
         }
 
@@ -231,8 +198,7 @@ enum ChatTopBar {
             kind: .createLocalAgent,
             title: L10n.tr("chat.menu.newLocalAgent"),
             emoji: "",
-            isSelected: false,
-            isEnabled: true
+            isSelected: false
         ))
 
         return items
@@ -249,15 +215,13 @@ enum ChatTopBar {
                 id: "open-llm",
                 kind: .destination(.llm),
                 title: L10n.tr("settings.llm.navigationTitle"),
-                systemImage: "cpu",
-                isDestructive: false
+                systemImage: "cpu"
             ),
             ConfigurationItem(
                 id: "open-skills",
                 kind: .destination(.skills),
                 title: L10n.tr("settings.skills.navigationTitle"),
-                systemImage: "square.stack.3d.up",
-                isDestructive: false
+                systemImage: "square.stack.3d.up"
             ),
         ]
 
@@ -268,8 +232,7 @@ enum ChatTopBar {
                     id: "background-execution",
                     kind: .backgroundExecution(enabled: isBackgroundEnabled),
                     title: L10n.tr("settings.background.enabled"),
-                    systemImage: "arrow.down.app",
-                    isDestructive: false
+                    systemImage: "arrow.down.app"
                 )
             )
         }
@@ -279,8 +242,7 @@ enum ChatTopBar {
                     id: "auto-compact",
                     kind: .autoCompact(enabled: autoCompactEnabled),
                     title: L10n.tr("chat.menu.autoCompact"),
-                    systemImage: "rectangle.compress.vertical",
-                    isDestructive: false
+                    systemImage: "rectangle.compress.vertical"
                 )
             )
         }
@@ -290,15 +252,13 @@ enum ChatTopBar {
                 id: "open-cron",
                 kind: .destination(.cron),
                 title: L10n.tr("settings.cron.navigationTitle"),
-                systemImage: "calendar.badge.clock",
-                isDestructive: false
+                systemImage: "calendar.badge.clock"
             ),
             ConfigurationItem(
                 id: "open-remote-control",
                 kind: .destination(.remoteControl),
                 title: L10n.tr("settings.remoteControl.navigationTitle"),
-                systemImage: "dot.radiowaves.left.and.right",
-                isDestructive: false
+                systemImage: "dot.radiowaves.left.and.right"
             ),
         ]
 
@@ -309,15 +269,13 @@ enum ChatTopBar {
                     id: "rename-agent",
                     kind: .renameAgent,
                     title: L10n.tr("chat.menu.renameAgent"),
-                    systemImage: "pencil",
-                    isDestructive: false
+                    systemImage: "pencil"
                 ),
                 ConfigurationItem(
                     id: "delete-agent",
                     kind: .deleteAgent,
                     title: L10n.tr("chat.menu.deleteAgent"),
-                    systemImage: "trash",
-                    isDestructive: true
+                    systemImage: "trash"
                 ),
             ])
         }

@@ -19,10 +19,11 @@ public enum QuickSettingItem {
 
     var id: String {
         switch self {
-        case let .toggle(id, _, _, _, _): id
-        case let .menu(id, _, _, _): id
-        case let .command(id, _, _, _): id
-        case let .skill(id, _, _, _, _): id
+        case let .toggle(id, _, _, _, _),
+             let .menu(id, _, _, _),
+             let .command(id, _, _, _),
+             let .skill(id, _, _, _, _):
+            id
         }
     }
 }

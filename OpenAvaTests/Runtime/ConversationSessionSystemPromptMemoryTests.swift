@@ -23,7 +23,6 @@ final class ConversationSessionSystemPromptMemoryTests: XCTestCase {
         )
 
         let delegate = AgentSessionDelegate(
-            sessionID: "session-1",
             supportRootURL: supportRoot,
             workspaceRootURL: supportRoot,
             chatClient: nil,
@@ -82,7 +81,6 @@ final class ConversationSessionSystemPromptMemoryTests: XCTestCase {
         )
 
         let delegate = AgentSessionDelegate(
-            sessionID: "session-2",
             supportRootURL: supportRoot,
             workspaceRootURL: supportRoot,
             chatClient: nil,
@@ -140,7 +138,6 @@ final class ConversationSessionSystemPromptMemoryTests: XCTestCase {
         )
 
         let delegate = AgentSessionDelegate(
-            sessionID: "session-3",
             supportRootURL: supportRoot,
             workspaceRootURL: supportRoot,
             chatClient: nil,
@@ -206,7 +203,6 @@ final class ConversationSessionSystemPromptMemoryTests: XCTestCase {
         )
 
         let delegate = AgentSessionDelegate(
-            sessionID: "session-repeat-memory",
             supportRootURL: supportRoot,
             workspaceRootURL: supportRoot,
             chatClient: nil,

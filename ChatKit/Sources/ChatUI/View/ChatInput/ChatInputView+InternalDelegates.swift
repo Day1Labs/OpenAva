@@ -54,10 +54,6 @@ extension ChatInputView: InputEditor.Delegate {
     }
 
     func onInputEditorSubmitButtonTapped() {
-        let object = collectObject()
-        if object.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, object.attachments.isEmpty {
-            return
-        }
         submitValues()
     }
 
@@ -185,12 +181,9 @@ extension ChatInputView {
         voiceRecognitionSession?.stop()
         voiceRecognitionSession = nil
 
-        let transcript = inputEditor.finishVoiceRecording(applyTranscript: applyTranscript)
+        _ = inputEditor.finishVoiceRecording(applyTranscript: applyTranscript)
 
-        // Since InputEditor now handles merging the text, we don't need to append the transcript again here.
-        // We just need to trigger a UI update and refocus if applyTranscript is true.
         if applyTranscript {
-            // We ensure we read the finalized merged text from InputEditor
             let finalMergedText = inputEditor.textView.text ?? ""
             inputEditor.set(text: finalMergedText)
             inputEditor.textView.becomeFirstResponder()

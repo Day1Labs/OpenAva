@@ -18,7 +18,6 @@ final class AgentDurableMemoryExtractorTests: XCTestCase {
             responseText: #"{"memories":[{"name":"User prefers terse answers","type":"feedback","description":"Response brevity preference","content":"Prefer concise answers with no trailing summaries.","slug":"response-style"}]}"#
         )
         let delegate = AgentSessionDelegate(
-            sessionID: "session-1",
             supportRootURL: supportRoot,
             workspaceRootURL: supportRoot,
             chatClient: chatClient,

@@ -234,8 +234,6 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     /// `pendingAutoSendID` is a unique token so the coordinator never submits the same request twice.
     let pendingAutoSendID: String?
     let pendingAutoSendMessage: String?
-    /// Forces `updateUIViewController` after menu data changes so menus pull fresh data.
-    let menuRefreshToken: Int
     let onConsumePendingAutoSend: ((String) -> Void)?
     let onMenuAction: ((MenuAction) -> Void)?
     let onSessionSwitch: ((ActiveSessionContext) -> Void)?
@@ -243,7 +241,6 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     let onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?
     let projectWorkspaces: [ProjectWorkspaceProfile]
     let activeProjectWorkspaceID: UUID?
-    let activeProjectWorkspaceName: String
     let onWorkspaceSwitch: ((UUID) -> Void)?
     let onOpenWorkspaceDirectory: (() -> Void)?
     let onImportWorkspace: ((UIViewController?) -> Void)?
@@ -378,6 +375,41 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         }
     }
 
+    private var headerTeamMemberCount: Int? {
+        switch activeContext {
+        case .allAgentsTeam:
+            return agents.count
+        case let .team(teamID):
+            return teams.first { $0.id == teamID }?.agentPoolIDs.count
+        case .agent:
+            return nil
+        }
+    }
+
+    private var headerState: ChatViewController.HeaderState {
+        .init(
+            agentName: resolvedSessionTitle,
+            agentEmoji: resolvedSessionEmoji,
+            modelName: selectedModelName,
+            providerName: selectedProviderName,
+            teamMemberCount: headerTeamMemberCount
+        )
+    }
+
+    private var fallbackConversationModels: ConversationSession.Models {
+        var models = ConversationSession.Models()
+        if let chatClient {
+            models.chat = ConversationSession.Model(
+                client: chatClient,
+                capabilities: [.visual, .tool],
+                contextLength: modelConfig?.contextTokens ?? 128_000,
+                maxOutputTokens: modelConfig?.resolvedMaxOutputTokens ?? 20000,
+                autoCompactEnabled: autoCompactEnabled
+            )
+        }
+        return models
+    }
+
     func makeCoordinator() -> Coordinator {
         Coordinator(
             onMenuAction: onMenuAction,
@@ -386,7 +418,6 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             activeContext: activeContext,
             activeAgentID: activeAgentID,
             activeAgentName: resolvedSessionTitle,
-            activeAgentEmoji: resolvedSessionEmoji,
             selectedModelName: selectedModelName,
             selectedProviderName: selectedProviderName,
             selectedThinkingStrength: selectedThinkingStrength,
@@ -396,7 +427,6 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             onThinkingStrengthChange: onThinkingStrengthChange,
             projectWorkspaces: projectWorkspaces,
             activeProjectWorkspaceID: activeProjectWorkspaceID,
-            activeProjectWorkspaceName: activeProjectWorkspaceName,
             onWorkspaceSwitch: onWorkspaceSwitch,
             onOpenWorkspaceDirectory: onOpenWorkspaceDirectory,
             onImportWorkspace: onImportWorkspace,
@@ -429,7 +459,6 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             if let resolvedTeamSessionsRootURL {
                 storageProvider = TranscriptStorageProvider.provider(supportRootURL: resolvedTeamSessionsRootURL)
                 sessionDelegate = AgentSessionDelegate(
-                    sessionID: sessionID,
                     supportRootURL: resolvedTeamSessionsRootURL,
                     workspaceRootURL: workspaceRootURL,
                     chatClient: chatClient,
@@ -441,23 +470,13 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
                 storageProvider = DisposableStorageProvider.shared
                 sessionDelegate = nil
             }
-            var fallbackModels = ConversationSession.Models()
-            if let chatClient {
-                fallbackModels.chat = ConversationSession.Model(
-                    client: chatClient,
-                    capabilities: [.visual, .tool],
-                    contextLength: modelConfig?.contextTokens ?? 128_000,
-                    maxOutputTokens: modelConfig?.resolvedMaxOutputTokens ?? 20000,
-                    autoCompactEnabled: autoCompactEnabled
-                )
-            }
             providedSession = nil
-            models = fallbackModels
+            models = fallbackConversationModels
 
         case .agent:
-            if let supportRootURL, activeAgentID != nil {
+            if let supportRootURL, let activeAgentID {
                 if let agent = agents.first(where: { $0.id == activeAgentID }), let modelConfig {
-                    let invocationSessionID = "\(activeAgentID!.uuidString)::\(sessionID)"
+                    let invocationSessionID = "\(activeAgentID.uuidString)::\(sessionID)"
                     let resources = AgentMainSessionRegistry.shared.sessionResources(
                         for: agent,
                         modelConfig: modelConfig,
@@ -472,25 +491,14 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
                 } else {
                     storageProvider = TranscriptStorageProvider.provider(supportRootURL: supportRootURL)
                     sessionDelegate = AgentSessionDelegate(
-                        sessionID: sessionID,
                         supportRootURL: supportRootURL,
                         workspaceRootURL: workspaceRootURL,
                         chatClient: chatClient,
                         agentName: activeAgentName,
                         agentEmoji: activeAgentEmoji
                     )
-                    var fallbackModels = ConversationSession.Models()
-                    if let chatClient {
-                        fallbackModels.chat = ConversationSession.Model(
-                            client: chatClient,
-                            capabilities: [.visual, .tool],
-                            contextLength: modelConfig?.contextTokens ?? 128_000,
-                            maxOutputTokens: modelConfig?.resolvedMaxOutputTokens ?? 20000,
-                            autoCompactEnabled: autoCompactEnabled
-                        )
-                    }
                     providedSession = nil
-                    models = fallbackModels
+                    models = fallbackConversationModels
                 }
             } else {
                 storageProvider = DisposableStorageProvider.shared
@@ -645,40 +653,17 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             sessionContext: sessionContext,
             agentCount: agentCount
         )
-        var teamMemberCount: Int? = nil
-        switch activeContext {
-        case .allAgentsTeam:
-            teamMemberCount = agents.count
-        case let .team(teamID):
-            if let team = teams.first(where: { $0.id == teamID }) {
-                teamMemberCount = team.agentPoolIDs.count
-            }
-        case .agent:
-            teamMemberCount = nil
-        }
-
-        chatViewController.updateHeader(.init(
-            agentName: resolvedSessionTitle,
-            agentEmoji: resolvedSessionEmoji,
-            modelName: selectedModelName,
-            providerName: selectedProviderName,
-            teamMemberCount: teamMemberCount
-        ))
+        chatViewController.updateHeader(headerState)
         context.coordinator.configureInputControls(on: chatViewController)
 
         return chatViewController
     }
 
     private func buildQuickSettingItems() -> [QuickSettingItem] {
-        var items: [QuickSettingItem] = [
+        [
             // Localize quick command labels while preserving the slash command token.
             .command(id: "context-usage", title: L10n.tr("chat.contextUsage.badgePlaceholder"), icon: "gauge", command: QuickCommand.context),
-        ]
-
-        let frequentSkills = buildFrequentSkillItems()
-        items.append(contentsOf: frequentSkills)
-
-        return items
+        ] + buildFrequentSkillItems()
     }
 
     private func buildFrequentSkillItems() -> [QuickSettingItem] {
@@ -719,13 +704,11 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         context.coordinator.activeContext = activeContext
         context.coordinator.activeAgentID = activeAgentID
         context.coordinator.activeAgentName = resolvedSessionTitle
-        context.coordinator.activeAgentEmoji = resolvedSessionEmoji
         context.coordinator.selectedModelName = selectedModelName
         context.coordinator.selectedProviderName = selectedProviderName
         context.coordinator.selectedThinkingStrength = selectedThinkingStrength
         context.coordinator.projectWorkspaces = projectWorkspaces
         context.coordinator.activeProjectWorkspaceID = activeProjectWorkspaceID
-        context.coordinator.activeProjectWorkspaceName = activeProjectWorkspaceName
         context.coordinator.onWorkspaceSwitch = onWorkspaceSwitch
         context.coordinator.onOpenWorkspaceDirectory = onOpenWorkspaceDirectory
         context.coordinator.onImportWorkspace = onImportWorkspace
@@ -762,7 +745,6 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         }
 
         context.coordinator.onSessionSwitch = onSessionSwitch
-        context.coordinator.onModelSwitch = onModelSwitch
         context.coordinator.onCreateLocalAgent = onCreateLocalAgent
         context.coordinator.onDeleteCurrentAgent = onDeleteCurrentAgent
         context.coordinator.onRenameCurrentAgent = onRenameCurrentAgent
@@ -782,25 +764,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
             }
         #endif
 
-        var teamMemberCount: Int? = nil
-        switch activeContext {
-        case .allAgentsTeam:
-            teamMemberCount = agents.count
-        case let .team(teamID):
-            if let team = teams.first(where: { $0.id == teamID }) {
-                teamMemberCount = team.agentPoolIDs.count
-            }
-        case .agent:
-            teamMemberCount = nil
-        }
-
-        chatViewController.updateHeader(.init(
-            agentName: resolvedSessionTitle,
-            agentEmoji: resolvedSessionEmoji,
-            modelName: selectedModelName,
-            providerName: selectedProviderName,
-            teamMemberCount: teamMemberCount
-        ))
+        chatViewController.updateHeader(headerState)
         context.coordinator.configureInputControls(on: chatViewController)
     }
 }
@@ -815,13 +779,11 @@ extension ChatViewControllerWrapper {
         var activeContext: ActiveSessionContext
         var activeAgentID: UUID?
         var activeAgentName: String
-        var activeAgentEmoji: String
         var selectedModelName: String
         var selectedProviderName: String
         var selectedThinkingStrength: ChatThinkingStrength
         var projectWorkspaces: [ProjectWorkspaceProfile]
         var activeProjectWorkspaceID: UUID?
-        var activeProjectWorkspaceName: String
         var onWorkspaceSwitch: ((UUID) -> Void)?
         var onOpenWorkspaceDirectory: (() -> Void)?
         var onImportWorkspace: ((UIViewController?) -> Void)?
@@ -844,7 +806,6 @@ extension ChatViewControllerWrapper {
             activeContext: ActiveSessionContext,
             activeAgentID: UUID?,
             activeAgentName: String,
-            activeAgentEmoji: String,
             selectedModelName: String,
             selectedProviderName: String,
             selectedThinkingStrength: ChatThinkingStrength,
@@ -854,7 +815,6 @@ extension ChatViewControllerWrapper {
             onThinkingStrengthChange: ((ChatThinkingStrength) -> Void)?,
             projectWorkspaces: [ProjectWorkspaceProfile],
             activeProjectWorkspaceID: UUID?,
-            activeProjectWorkspaceName: String,
             onWorkspaceSwitch: ((UUID) -> Void)?,
             onOpenWorkspaceDirectory: (() -> Void)?,
             onImportWorkspace: ((UIViewController?) -> Void)?,
@@ -870,14 +830,12 @@ extension ChatViewControllerWrapper {
             self.activeContext = activeContext
             self.activeAgentID = activeAgentID
             self.activeAgentName = activeAgentName
-            self.activeAgentEmoji = activeAgentEmoji
             self.selectedModelName = selectedModelName
             self.selectedProviderName = selectedProviderName
             self.selectedThinkingStrength = selectedThinkingStrength
             self.autoCompactEnabled = autoCompactEnabled
             self.projectWorkspaces = projectWorkspaces
             self.activeProjectWorkspaceID = activeProjectWorkspaceID
-            self.activeProjectWorkspaceName = activeProjectWorkspaceName
             self.onWorkspaceSwitch = onWorkspaceSwitch
             self.onOpenWorkspaceDirectory = onOpenWorkspaceDirectory
             self.onImportWorkspace = onImportWorkspace
@@ -1306,44 +1264,26 @@ extension ChatViewControllerWrapper {
         private func makeSessionMenuElement(for entry: ChatTopBar.SessionMenuEntry) -> UIMenuElement? {
             switch entry.kind {
             case .allAgentsTeam:
-                let image = makeEmojiMenuImage(from: entry.emoji, showsRunningIndicator: false) ?? standardizedMenuIcon(UIImage(systemName: "person.2"))
-                let state: UIMenuElement.State = entry.isSelected ? .on : .off
-                return UIAction(
+                return makeSessionSwitchAction(
                     title: entry.title,
-                    image: image,
-                    identifier: nil,
-                    discoverabilityTitle: nil,
-                    attributes: [],
-                    state: state
-                ) { [weak self] _ in
-                    self?.onSessionSwitch?(.allAgentsTeam)
-                }
+                    image: makeEmojiMenuImage(from: entry.emoji, showsRunningIndicator: false) ?? standardizedMenuIcon(UIImage(systemName: "person.2")),
+                    isSelected: entry.isSelected,
+                    context: .allAgentsTeam
+                )
             case let .team(teamID):
-                let image = makeEmojiMenuImage(from: entry.emoji, showsRunningIndicator: false) ?? standardizedMenuIcon(UIImage(systemName: "person.3"))
-                let state: UIMenuElement.State = entry.isSelected ? .on : .off
-                return UIAction(
+                return makeSessionSwitchAction(
                     title: entry.title,
-                    image: image,
-                    identifier: nil,
-                    discoverabilityTitle: nil,
-                    attributes: [],
-                    state: state
-                ) { [weak self] _ in
-                    self?.onSessionSwitch?(.team(teamID))
-                }
+                    image: makeEmojiMenuImage(from: entry.emoji, showsRunningIndicator: false) ?? standardizedMenuIcon(UIImage(systemName: "person.3")),
+                    isSelected: entry.isSelected,
+                    context: .team(teamID)
+                )
             case let .agent(agentID):
-                let image = makeAgentMenuImage(for: agentID, fallbackEmoji: entry.emoji)
-                let state: UIMenuElement.State = entry.isSelected ? .on : .off
-                return UIAction(
+                return makeSessionSwitchAction(
                     title: entry.title,
-                    image: image,
-                    identifier: nil,
-                    discoverabilityTitle: nil,
-                    attributes: [],
-                    state: state
-                ) { [weak self] _ in
-                    self?.onSessionSwitch?(.agent(agentID))
-                }
+                    image: makeAgentMenuImage(for: agentID, fallbackEmoji: entry.emoji),
+                    isSelected: entry.isSelected,
+                    context: .agent(agentID)
+                )
             case .createLocalAgent:
                 return UIAction(
                     title: entry.title,
@@ -1353,6 +1293,24 @@ extension ChatViewControllerWrapper {
                 }
             case .empty:
                 return UIAction(title: entry.title, attributes: [.disabled]) { _ in }
+            }
+        }
+
+        private func makeSessionSwitchAction(
+            title: String,
+            image: UIImage?,
+            isSelected: Bool,
+            context: ActiveSessionContext
+        ) -> UIAction {
+            UIAction(
+                title: title,
+                image: image,
+                identifier: nil,
+                discoverabilityTitle: nil,
+                attributes: [],
+                state: isSelected ? .on : .off
+            ) { [weak self] _ in
+                self?.onSessionSwitch?(context)
             }
         }
 
@@ -1400,7 +1358,7 @@ extension ChatViewControllerWrapper {
                 return UIAction(
                     title: item.title,
                     image: UIImage(systemName: item.systemImage),
-                    attributes: item.isDestructive ? [.destructive] : []
+                    attributes: [.destructive]
                 ) { [weak self, weak controller] _ in
                     guard let self, let controller else { return }
                     self.presentDeleteCurrentAgentAlert(from: controller)
@@ -1452,50 +1410,6 @@ extension ChatViewControllerWrapper {
                 return nil
             }
             return image
-        }
-
-        private func makeEmojiButtonImage(from emoji: String) -> UIImage? {
-            let trimmed = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { return nil }
-
-            let size = CGSize(width: 24, height: 24)
-            let renderer = UIGraphicsImageRenderer(size: size)
-            return renderer.image { _ in
-                let paragraph = NSMutableParagraphStyle()
-                paragraph.alignment = .center
-
-                let attributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 18),
-                    .paragraphStyle: paragraph,
-                ]
-
-                let text = trimmed as NSString
-                let textSize = text.size(withAttributes: attributes)
-                let rect = CGRect(
-                    x: (size.width - textSize.width) / 2,
-                    y: (size.height - textSize.height) / 2,
-                    width: textSize.width,
-                    height: textSize.height
-                )
-                text.draw(in: rect, withAttributes: attributes)
-            }.withRenderingMode(.alwaysOriginal)
-        }
-
-        private func makeActiveAgentButtonImage() -> UIImage? {
-            guard let activeAgentID,
-                  let profile = agents.first(where: { $0.id == activeAgentID }),
-                  let avatarImage = loadAgentAvatarImage(for: profile)
-            else {
-                return nil
-            }
-
-            let canvasSize = CGSize(width: 24, height: 24)
-            let renderer = UIGraphicsImageRenderer(size: canvasSize)
-            return renderer.image { _ in
-                let rect = CGRect(origin: .zero, size: canvasSize)
-                UIBezierPath(ovalIn: rect).addClip()
-                avatarImage.draw(in: rect)
-            }.withRenderingMode(.alwaysOriginal)
         }
 
         private func makeAvatarMenuImage(for profile: AgentProfile, showsRunningIndicator: Bool) -> UIImage? {

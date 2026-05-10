@@ -142,7 +142,6 @@ final class AgentMainSessionRegistry {
 
         let storageProvider = TranscriptStorageProvider.provider(supportRootURL: agent.contextURL)
         let sessionDelegate = AgentSessionDelegate(
-            sessionID: mainSessionID,
             supportRootURL: agent.contextURL,
             workspaceRootURL: agent.workspaceURL,
             chatClient: nil,

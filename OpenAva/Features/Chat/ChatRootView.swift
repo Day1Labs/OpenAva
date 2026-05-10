@@ -51,7 +51,6 @@ struct ChatRootView: View {
     /// Pending message from an App Intent, consumed once by ChatViewControllerWrapper.
     @State private var pendingAutoSendID: String? = nil
     @State private var pendingAutoSendMessage: String? = nil
-    @State private var menuRefreshToken: Int = 0
 
     private enum MenuDestination: Hashable {
         case llm
@@ -149,12 +148,10 @@ struct ChatRootView: View {
             drainPendingAutoSend()
         }
         .onChange(of: containerStore.agents) { _, _ in
-            menuRefreshToken &+= 1
             normalizeSessionContextForVisibleMenu()
             updateHeartbeatService()
         }
         .onChange(of: containerStore.teams) { _, _ in
-            menuRefreshToken &+= 1
             normalizeSessionContextForVisibleMenu()
         }
         .onChange(of: containerStore.activeAgent?.id) { _, newAgentID in
@@ -175,7 +172,6 @@ struct ChatRootView: View {
             updateHeartbeatService()
         }
         .onChange(of: containerStore.activeProjectWorkspace?.id) { _, _ in
-            menuRefreshToken &+= 1
             didEvaluateOnboarding = false
             normalizeSessionContextForVisibleMenu()
             presentOnboardingIfNeeded()
@@ -214,19 +210,14 @@ struct ChatRootView: View {
             teamSessionsRootURL: containerStore.teamSessionsRootURL,
             projectWorkspaces: containerStore.projectWorkspaces,
             activeProjectWorkspaceID: containerStore.activeProjectWorkspace?.id,
-            activeProjectWorkspaceName: containerStore.activeProjectWorkspace?.resolvedName ?? "OpenAva",
             teams: containerStore.teams,
             agents: containerStore.agents,
             activeContext: activeContext,
             activeAgentID: containerStore.activeAgent?.id,
             activeAgentName: currentActiveAgentName,
             activeAgentEmoji: currentActiveAgentEmoji,
-            selectedModelName: currentSelectedModelName,
-            selectedProviderName: resolveSelectedProviderName(),
-            selectedThinkingStrength: containerStore.container.config.agent.thinkingStrength,
             pendingAutoSendID: pendingAutoSendID,
             pendingAutoSendMessage: pendingAutoSendMessage,
-            menuRefreshToken: menuRefreshToken,
             onConsumePendingAutoSend: consumePendingAutoSend,
             onMenuAction: handleMenuAction,
             onSessionSwitch: handleSessionSwitch,
@@ -326,8 +317,7 @@ struct ChatRootView: View {
     }
 
     private func handleWorkspaceSwitch(_ workspaceID: UUID) {
-        guard containerStore.switchProjectWorkspace(workspaceID) else { return }
-        menuRefreshToken &+= 1
+        _ = containerStore.switchProjectWorkspace(workspaceID)
     }
 
     private func openActiveWorkspaceDirectory() {
@@ -369,7 +359,6 @@ struct ChatRootView: View {
         #else
             do {
                 _ = try containerStore.createProjectWorkspace(named: name.isEmpty ? "OpenAva" : name)
-                menuRefreshToken &+= 1
             } catch {
                 workspaceErrorMessage = error.localizedDescription
             }
@@ -380,7 +369,6 @@ struct ChatRootView: View {
         do {
             guard let url = try result.get().first else { return }
             _ = try containerStore.importProjectWorkspace(at: url)
-            menuRefreshToken &+= 1
         } catch {
             workspaceErrorMessage = error.localizedDescription
         }
@@ -391,7 +379,6 @@ struct ChatRootView: View {
             guard let parentURL = try result.get().first else { return }
             let name = newWorkspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
             _ = try containerStore.createProjectWorkspace(named: name.isEmpty ? "OpenAva" : name, inParentDirectory: parentURL)
-            menuRefreshToken &+= 1
         } catch {
             workspaceErrorMessage = error.localizedDescription
         }
@@ -528,16 +515,6 @@ struct ChatRootView: View {
         }
     }
 
-    private func resolveSelectedProviderName() -> String {
-        guard let selected = containerStore.container.config.selectedLLMModel else {
-            return ""
-        }
-        if let provider = LLMProvider(rawValue: selected.provider) {
-            return provider.displayName
-        }
-        return selected.provider
-    }
-
     private func destinationView(for destination: MenuDestination) -> some View {
         Group {
             switch destination {
@@ -586,10 +563,6 @@ struct ChatRootView: View {
         containerStore.teams.first { $0.id == teamID }
     }
 
-    private var currentSelectedModelName: String {
-        containerStore.container.config.selectedLLMModel?.name ?? L10n.tr("chat.selectedModel.notSelected")
-    }
-
     private func toggleAutoCompact() {
         let newValue = !autoCompactEnabled
         guard containerStore.setAutoCompact(newValue) else { return }
@@ -603,19 +576,14 @@ private struct ChatScreen: View {
     let teamSessionsRootURL: URL?
     let projectWorkspaces: [ProjectWorkspaceProfile]
     let activeProjectWorkspaceID: UUID?
-    let activeProjectWorkspaceName: String
     let teams: [TeamProfile]
     let agents: [AgentProfile]
     let activeContext: ActiveSessionContext
     let activeAgentID: UUID?
     let activeAgentName: String
     let activeAgentEmoji: String
-    let selectedModelName: String
-    let selectedProviderName: String
-    let selectedThinkingStrength: ChatThinkingStrength
     let pendingAutoSendID: String?
     let pendingAutoSendMessage: String?
-    let menuRefreshToken: Int
     let onConsumePendingAutoSend: ((String) -> Void)?
     let onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)?
     let onSessionSwitch: ((ActiveSessionContext) -> Void)?
@@ -672,7 +640,7 @@ private struct ChatScreen: View {
                 Button {
                     NotificationCenter.default.post(name: .openAvaDidTapPrincipalTitle, object: nil)
                 } label: {
-                    Text(topBarTitle.principalTitleText)
+                    Text(topBarTitle.principalDisplayText)
                         .font(Font(ChatUIDesign.Typography.agentTitle))
                         .foregroundStyle(Color(uiColor: ChatUIDesign.Color.offBlack))
                         .lineLimit(1)
@@ -693,7 +661,6 @@ private struct ChatScreen: View {
             ChatTopBar.title(
                 displayName: activeAgentName,
                 displayEmoji: activeAgentEmoji,
-                modelName: selectedModelName,
                 activeContext: activeContext
             )
         }
@@ -907,6 +874,19 @@ private struct ChatScreen: View {
         }
     #endif
 
+    private var selectedModelName: String {
+        container.config.selectedLLMModel?.name ?? L10n.tr("chat.selectedModel.notSelected")
+    }
+
+    private var selectedProviderName: String {
+        guard let selected = container.config.selectedLLMModel else { return "" }
+        return LLMProvider(rawValue: selected.provider)?.displayName ?? selected.provider
+    }
+
+    private var selectedThinkingStrength: ChatThinkingStrength {
+        container.config.agent.thinkingStrength
+    }
+
     private var toolInvocationSessionID: String {
         switch activeContext {
         case .allAgentsTeam, .team:
@@ -939,7 +919,6 @@ private struct ChatScreen: View {
             selectedThinkingStrength: selectedThinkingStrength,
             pendingAutoSendID: pendingAutoSendID,
             pendingAutoSendMessage: pendingAutoSendMessage,
-            menuRefreshToken: menuRefreshToken,
             onConsumePendingAutoSend: onConsumePendingAutoSend,
             onMenuAction: onMenuAction,
             onSessionSwitch: onSessionSwitch,
@@ -947,7 +926,6 @@ private struct ChatScreen: View {
             onThinkingStrengthChange: onThinkingStrengthChange,
             projectWorkspaces: projectWorkspaces,
             activeProjectWorkspaceID: activeProjectWorkspaceID,
-            activeProjectWorkspaceName: activeProjectWorkspaceName,
             onWorkspaceSwitch: onWorkspaceSwitch,
             onOpenWorkspaceDirectory: onOpenWorkspaceDirectory,
             onImportWorkspace: onImportWorkspace,
