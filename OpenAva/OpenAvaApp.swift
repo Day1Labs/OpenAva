@@ -178,9 +178,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         center.addObserver(forName: UIScene.willConnectNotification, object: nil, queue: .main) { n in
             apply(n.object)
         }
-        center.addObserver(forName: UIScene.didActivateNotification, object: nil, queue: .main) { n in
-            apply(n.object)
-        }
+        // Do not reapply this from UIScene.didActivateNotification. On Mac Catalyst,
+        // setting UIWindow.backgroundColor again during display wake can leave the
+        // window chrome alive while the hosted content renders as a blank white area.
     }
 
     extension AppDelegate {
