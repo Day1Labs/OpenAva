@@ -415,10 +415,8 @@ struct ChatRootView: View {
 
     private func scopedSessionID(for sessionKey: String, context: ActiveSessionContext) -> String {
         switch context {
-        case .allAgentsTeam:
+        case .allAgentsTeam, .team:
             return TeamSwarmCoordinator.mainSessionID
-        case let .team(teamID):
-            return "team-\(teamID.uuidString)-\(sessionKey)"
         case .agent:
             // Agent transcripts are already isolated by supportRootURL per agent.
             return sessionKey
