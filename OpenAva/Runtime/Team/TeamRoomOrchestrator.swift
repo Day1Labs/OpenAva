@@ -533,6 +533,7 @@ final class TeamRoomOrchestrator {
         The visible conversation transcript is the single source of truth for this Team Room.
         \(participationNote)
         Do not speak as a coordinator and do not summarize other agents unless the user explicitly asks you to.
+        Keep your reply concise unless the user explicitly asks for detail.
         Provide your own useful contribution as \(agent.name).
         """
 
