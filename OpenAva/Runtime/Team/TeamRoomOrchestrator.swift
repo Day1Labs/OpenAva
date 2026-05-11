@@ -553,7 +553,7 @@ final class TeamRoomOrchestrator {
         }()
         let roomName: String = switch context.activeContext {
         case .allAgentsTeam:
-            activeTeam?.name ?? "All Agents Team Room"
+            activeTeam?.name ?? L10n.tr("chat.menu.allAgentsTeam")
         case .team:
             activeTeam?.name ?? "Team Room"
         case .agent:

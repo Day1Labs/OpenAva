@@ -10,6 +10,9 @@ enum TeamStore {
     private enum Storage {
         static let directoryName = "teams"
     }
+    private static var localizedAllAgentsTeamName: String {
+        L10n.tr("chat.menu.allAgentsTeam")
+    }
 
     static func load(fileManager: FileManager = .default, workspaceRootURL: URL? = nil) -> TeamStateSnapshot {
         let teams = OpenAvaProjectFile.load(fileManager: fileManager, workspaceRootURL: workspaceRootURL)?.teams ?? []
@@ -562,7 +565,7 @@ enum TeamStore {
         if !fileManager.fileExists(atPath: identityURL.path) {
             try? AgentTemplateWriter.writeTeamFile(
                 at: directoryURL,
-                name: "All Agents Team Room",
+                name: localizedAllAgentsTeamName,
                 emoji: "👥",
                 description: "A shared room where all agents can respond.",
                 fileManager: fileManager

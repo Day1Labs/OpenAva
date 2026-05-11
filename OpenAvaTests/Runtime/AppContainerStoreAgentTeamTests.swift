@@ -246,7 +246,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
 
         let initialTeam = try XCTUnwrap(containerStore.allAgentsTeam)
         XCTAssertEqual(initialTeam.id, TeamStore.allAgentsTeamID)
-        XCTAssertFalse(initialTeam.name.isEmpty)
+        XCTAssertEqual(initialTeam.name, L10n.tr("chat.menu.allAgentsTeam"))
 
         XCTAssertTrue(containerStore.renameActiveTeam(to: "Everyone Room"))
 
