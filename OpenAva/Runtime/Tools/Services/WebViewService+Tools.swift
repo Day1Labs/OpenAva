@@ -20,7 +20,8 @@ extension WebViewService: ToolDefinitionProvider {
                     ],
                     "required": ["url"],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .externalNavigation
             ),
 
             // Refresh the interactive element list for the currently open page.
@@ -32,7 +33,10 @@ extension WebViewService: ToolDefinitionProvider {
                     "type": "object",
                     "properties": [:] as [String: Any],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                isReadOnly: true,
+                permissionProfile: .read,
+                isConcurrencySafe: true
             ),
 
             // Click an element by its ref number.
@@ -50,7 +54,8 @@ extension WebViewService: ToolDefinitionProvider {
                     ],
                     "required": ["ref"],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .externalInteraction
             ),
 
             // Fill an input field.
@@ -76,7 +81,8 @@ extension WebViewService: ToolDefinitionProvider {
                     ],
                     "required": ["ref", "text"],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .externalInteraction
             ),
 
             // Scroll the page.
@@ -99,7 +105,9 @@ extension WebViewService: ToolDefinitionProvider {
                     ],
                     "required": ["direction"],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .viewControl,
+                isConcurrencySafe: true
             ),
 
             // Select a dropdown option.
@@ -121,7 +129,8 @@ extension WebViewService: ToolDefinitionProvider {
                     ],
                     "required": ["ref", "value"],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .externalInteraction
             ),
 
             // Browser navigation.
@@ -140,7 +149,8 @@ extension WebViewService: ToolDefinitionProvider {
                     ],
                     "required": ["direction"],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .viewControl
             ),
 
             // Close the floating web view.
@@ -152,7 +162,9 @@ extension WebViewService: ToolDefinitionProvider {
                     "type": "object",
                     "properties": [:] as [String: Any],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                permissionProfile: .viewControl,
+                isConcurrencySafe: true
             ),
 
             // Read page content as markdown.
@@ -169,7 +181,9 @@ extension WebViewService: ToolDefinitionProvider {
                         ],
                     ],
                     "additionalProperties": false,
-                ] as [String: Any])
+                ] as [String: Any]),
+                isReadOnly: true,
+                permissionProfile: .read
             ),
         ]
     }

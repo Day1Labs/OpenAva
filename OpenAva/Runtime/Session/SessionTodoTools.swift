@@ -53,7 +53,7 @@ final class SessionTodoTools: ToolDefinitionProvider {
                     "additionalProperties": false,
                 ] as [String: Any]),
                 isReadOnly: false,
-                permissionProfile: .internalStateMutation,
+                permissionProfile: .internalStateUpdate,
                 isDestructive: false,
                 isConcurrencySafe: false,
                 maxResultSizeChars: 100 * 1024

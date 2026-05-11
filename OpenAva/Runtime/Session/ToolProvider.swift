@@ -17,17 +17,20 @@ import Foundation
 /// metadata instead of hard-coding tool names.
 public enum ToolPermissionProfile: String, Sendable, Equatable {
     case standard
-    case fileRead
-    case fileMutation
-    case fileDelete
-    case bashCommand
-    case internalStateMutation
-    case teamMessage
-    case teamPlanApproval
-    case teamTaskStateUpdate
-    case autoReviewAllowedMutation
-    case autoReviewAllowedInstructionOrchestration
-    case cron
+    case read
+    case localMutation
+    case localDeletion
+    case commandExecution
+    case internalStateUpdate
+    case internalCommunication
+    case planApproval
+    case taskUpdate
+    case trustedMutation
+    case instructionOrchestration
+    case scheduledAutomation
+    case externalNavigation
+    case externalInteraction
+    case viewControl
 }
 
 /// Information about an executable tool.

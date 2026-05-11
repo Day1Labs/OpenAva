@@ -582,16 +582,24 @@
 "settings.skills.editor.defaultTemplate.purpose" = "# 目标\n\n描述应该在何时以及为什么使用该技能。\n\n# 步骤\n\n1. 添加清晰的执行步骤。\n2. 确保输出具备可操作性。\n";
 
 // Tool Permission & Execution Strings
-"tool.permission.destructive" = "由于该工具可能会修改或删除数据，本次执行需要您的授权。";
-"tool.permission.mutating" = "由于该工具可能会修改本地应用状态或调用附加指令，本次执行需要您的授权。";
-"tool.permission.teamShutdown" = "停止协同成员的操作需要您的授权。";
-"tool.permission.rule.denied" = "根据已记住的权限规则，该工具的执行已被拒绝。";
-"tool.permission.rule.ask" = "由于权限规则设定了运行前询问，该工具的执行需要您的授权。";
-"tool.permission.readOutsideWorkspace" = "由于访问了已知工作区范围之外的绝对路径，该工具的执行需要您的授权。";
-"tool.permission.readOutsideAllowed" = "由于访问了允许工作目录之外的绝对路径，该工具的执行需要您的授权。";
-"tool.permission.writeOutsideWorkspace" = "由于试图在工作区范围之外写入绝对路径，该工具的执行需要您的授权。";
-"tool.permission.sensitivePath" = "由于触及了敏感路径，该工具的执行需要您的授权。";
-"tool.permission.deleteWorkspaceRoot" = "删除工作区根目录的操作需要您的授权。";
-"tool.permission.bash.unclassified" = "由于无法对该命令进行分类，Bash 命令需要您的授权。";
-"tool.permission.bash.unknownRisk" = "由于可能会修改本地状态、访问网络或存在未知风险，Bash 命令需要您的授权。";
-"tool.permission.bash.destructive" = "由于可能具有破坏性、需要提权操作或涉及敏感路径，Bash 命令需要您的授权。";
+"toolPermission.destructiveMutation" = "该操作可能修改或删除数据，需要您的授权。";
+"toolPermission.unclassifiedMutation" = "该操作可能改变应用状态或运行附加指令，需要您的授权。";
+"toolPermission.internalCommunication.shutdownRequest" = "停止另一个 Agent 需要您的授权。";
+"toolPermission.rule.denied" = "已记住的权限规则拒绝了该操作。";
+"toolPermission.rule.ask" = "已记住的权限规则要求该操作运行前先获得授权。";
+"toolPermission.read.absolutePathUnknownScope" = "读取该绝对路径需要授权，因为它不在已知工作区范围内。";
+"toolPermission.read.absolutePathOutsideAllowedRoots" = "读取该绝对路径需要授权，因为它不在允许的工作目录内。";
+"toolPermission.localMutation.absolutePathUnknownScope" = "写入该绝对路径需要授权，因为它不在已知工作区范围内。";
+"toolPermission.path.sensitive" = "该操作涉及敏感路径，需要您的授权。";
+"toolPermission.localDeletion.workspaceRoot" = "删除工作区根目录需要您的授权。";
+"toolPermission.commandExecution.unclassified" = "该命令无法分类，需要您的授权。";
+"toolPermission.commandExecution.unknownRisk" = "该命令可能修改本地状态、访问网络或存在未知风险。";
+"toolPermission.commandExecution.destructive" = "该命令可能具有破坏性、需要提权操作或涉及敏感路径。";
+"toolPermission.externalNavigation.open" = "打开该外部视图需要您的授权。";
+"toolPermission.externalNavigation.website" = "打开来自 %@ 的页面需要您的授权。";
+"toolPermission.externalNavigation.localFile" = "打开该本地文件需要您的授权。";
+"toolPermission.externalInteraction.pageAction" = "与该页面交互需要授权，因为可能触发网站上的动作。";
+"toolPermission.externalInteraction.formInput" = "在该页面输入或选择内容需要授权，因为可能向网站提交数据。";
+"toolPermission.remember.allowWebsite" = "始终允许来自该网站的页面";
+"toolPermission.remember.allowWebsite.subtitle" = "以后打开同一网站的页面时不再请求授权。";
+"toolPermission.remember.allowExactExternalInteraction.subtitle" = "仅对此页面动作和参数完全相同的请求不再授权。";

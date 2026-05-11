@@ -47,7 +47,7 @@ extension TextImageRenderService: ToolDefinitionProvider {
                     "required": ["text"],
                     "additionalProperties": false,
                 ] as [String: Any]),
-                permissionProfile: .autoReviewAllowedMutation
+                permissionProfile: .trustedMutation
             ),
         ]
     }

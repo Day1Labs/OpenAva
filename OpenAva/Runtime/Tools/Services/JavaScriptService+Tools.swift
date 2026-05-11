@@ -63,7 +63,7 @@ extension JavaScriptService: ToolDefinitionProvider {
                     ],
                     "additionalProperties": false,
                 ] as [String: Any]),
-                permissionProfile: .autoReviewAllowedInstructionOrchestration
+                permissionProfile: .instructionOrchestration
             ),
         ]
     }

@@ -50,6 +50,7 @@ enum ToolPermissionMatcher: Codable, Equatable {
     case commandPrefix(String)
     case argumentContains(String)
     case argumentsEqual(String)
+    case urlOrigin(String)
 }
 
 struct ToolPermissionDecision: Equatable {
@@ -117,12 +118,16 @@ func defaultToolPermissionPolicy(_ request: ToolRequest, _ tool: any ToolExecuto
         return internalStateDecision
     }
 
-    if let fileReadDecision = fileReadPermissionDecision(for: request, tool: tool, context: context) {
-        return fileReadDecision
+    if let readDecision = readPermissionDecision(for: request, tool: tool, context: context) {
+        return readDecision
     }
 
-    if let fileMutationDecision = fileMutationPermissionDecision(for: request, tool: tool, context: context) {
-        return fileMutationDecision
+    if let localMutationDecision = localMutationPermissionDecision(for: request, tool: tool, context: context) {
+        return localMutationDecision
+    }
+
+    if let webViewDecision = webViewPermissionDecision(for: request, tool: tool, context: context) {
+        return webViewDecision
     }
 
     if tool.isReadOnly {
@@ -133,8 +138,8 @@ func defaultToolPermissionPolicy(_ request: ToolRequest, _ tool: any ToolExecuto
         )
     }
 
-    if let teamToolDecision = defaultTeamToolPermissionDecision(for: request, tool: tool) {
-        return teamToolDecision
+    if let workflowDecision = internalWorkflowPermissionDecision(for: request, tool: tool) {
+        return workflowDecision
     }
 
     if let bashDecision = bashPermissionDecision(for: request, tool: tool, mode: context.session.toolPermissionMode) {
@@ -161,19 +166,19 @@ func defaultToolPermissionPolicy(_ request: ToolRequest, _ tool: any ToolExecuto
 
     if tool.isDestructive {
         return .ask(
-            message: String.localized("tool.permission.destructive"),
+            message: String.localized("toolPermission.destructiveMutation"),
             reason: "destructive_tool_requires_approval"
         )
     }
 
     return .ask(
-        message: String.localized("tool.permission.mutating"),
+        message: String.localized("toolPermission.unclassifiedMutation"),
         reason: "unclassified_mutating_tool_requires_approval"
     )
 }
 
 private func internalStateToolPermissionDecision(for tool: any ToolExecutor) -> ToolPermissionDecision? {
-    guard tool.permissionProfile == .internalStateMutation else {
+    guard tool.permissionProfile == .internalStateUpdate else {
         return nil
     }
 
@@ -184,33 +189,33 @@ private func internalStateToolPermissionDecision(for tool: any ToolExecutor) -> 
     )
 }
 
-private func defaultTeamToolPermissionDecision(for request: ToolRequest, tool: any ToolExecutor) -> ToolPermissionDecision? {
+private func internalWorkflowPermissionDecision(for request: ToolRequest, tool: any ToolExecutor) -> ToolPermissionDecision? {
     switch tool.permissionProfile {
-    case .teamMessage:
+    case .internalCommunication:
         if teamMessageSendRequestsShutdown(request.arguments) {
             return .ask(
-                message: String.localized("tool.permission.teamShutdown"),
+                message: String.localized("toolPermission.internalCommunication.shutdownRequest"),
                 reason: "team_shutdown_requires_approval"
             )
         }
         return ToolPermissionDecision(
             behavior: .allow,
             message: nil,
-            reason: "internal_team_message"
+            reason: "internal_communication"
         )
 
-    case .teamPlanApproval:
+    case .planApproval:
         return ToolPermissionDecision(
             behavior: .allow,
             message: nil,
-            reason: "team_plan_approval"
+            reason: "plan_approval"
         )
 
-    case .teamTaskStateUpdate:
+    case .taskUpdate:
         return ToolPermissionDecision(
             behavior: .allow,
             message: nil,
-            reason: "team_task_state_update"
+            reason: "task_update"
         )
 
     default:
@@ -244,12 +249,12 @@ private func sessionRulePermissionDecision(for request: ToolRequest, in session:
         )
     case .deny:
         return .deny(
-            message: String.localized("tool.permission.rule.denied"),
+            message: String.localized("toolPermission.rule.denied"),
             reason: "permission_rule_deny_\(rule.scope.rawValue)"
         )
     case .ask:
         return .ask(
-            message: String.localized("tool.permission.rule.ask"),
+            message: String.localized("toolPermission.rule.ask"),
             reason: "permission_rule_ask_\(rule.scope.rawValue)"
         )
     }
@@ -277,6 +282,11 @@ private func toolPermissionRule(_ rule: ToolPermissionRule, matches request: Too
         return request.arguments.localizedCaseInsensitiveContains(value)
     case let .argumentsEqual(arguments):
         return normalizedPermissionArguments(request.arguments) == normalizedPermissionArguments(arguments)
+    case let .urlOrigin(origin):
+        guard let requestOrigin = webViewOriginArgument(in: request.arguments) else {
+            return false
+        }
+        return requestOrigin == normalizedWebViewOrigin(origin)
     }
 }
 
@@ -292,8 +302,8 @@ private func normalizedPermissionArguments(_ arguments: String) -> String {
     return normalizedText
 }
 
-private func fileReadPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, context: ToolExecutionContext) -> ToolPermissionDecision? {
-    guard tool.permissionProfile == .fileRead else {
+private func readPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, context: ToolExecutionContext) -> ToolPermissionDecision? {
+    guard tool.permissionProfile == .read else {
         return nil
     }
 
@@ -309,7 +319,7 @@ private func fileReadPermissionDecision(for request: ToolRequest, tool: any Tool
 
     guard let scopeProvider = context.toolProvider as? ToolPermissionScopeProviding else {
         return .ask(
-            message: String.localized("tool.permission.readOutsideWorkspace"),
+            message: String.localized("toolPermission.read.absolutePathUnknownScope"),
             reason: "absolute_read_path_requires_approval"
         )
     }
@@ -325,7 +335,7 @@ private func fileReadPermissionDecision(for request: ToolRequest, tool: any Tool
     }
 
     return .ask(
-        message: String.localized("tool.permission.readOutsideAllowed"),
+        message: String.localized("toolPermission.read.absolutePathOutsideAllowedRoots"),
         reason: "absolute_read_path_requires_approval",
         approvedReadableRootURL: URL(fileURLWithPath: resolvedPath)
     )
@@ -344,14 +354,14 @@ private func isPermissionPath(_ path: String, withinRoot root: String) -> Bool {
 private func parameterAwarePermissionDecision(for request: ToolRequest, tool: any ToolExecutor) -> ToolPermissionDecision? {
     if permissionPathArguments(in: request.arguments).contains(where: isSensitivePermissionPath) {
         return .ask(
-            message: String.localized("tool.permission.sensitivePath"),
+            message: String.localized("toolPermission.path.sensitive"),
             reason: "sensitive_path_requires_approval"
         )
     }
 
-    if tool.permissionProfile == .fileDelete, deletesWorkspaceRoot(request.arguments) {
+    if tool.permissionProfile == .localDeletion, deletesWorkspaceRoot(request.arguments) {
         return .ask(
-            message: String.localized("tool.permission.deleteWorkspaceRoot"),
+            message: String.localized("toolPermission.localDeletion.workspaceRoot"),
             reason: "workspace_root_delete_requires_approval"
         )
     }
@@ -360,12 +370,12 @@ private func parameterAwarePermissionDecision(for request: ToolRequest, tool: an
 }
 
 private func bashPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, mode: ToolPermissionMode) -> ToolPermissionDecision? {
-    guard tool.permissionProfile == .bashCommand else {
+    guard tool.permissionProfile == .commandExecution else {
         return nil
     }
     guard let classification = BashPermissionClassifier.default.classify(arguments: request.arguments) else {
         return .ask(
-            message: String.localized("tool.permission.bash.unclassified"),
+            message: String.localized("toolPermission.commandExecution.unclassified"),
             reason: "bash_command_unclassified"
         )
     }
@@ -386,37 +396,112 @@ private func bashPermissionDecision(for request: ToolRequest, tool: any ToolExec
             )
         }
         return .ask(
-            message: String.localized("tool.permission.bash.unknownRisk"),
+            message: String.localized("toolPermission.commandExecution.unknownRisk"),
             reason: classification.reason
         )
     case .privilegeEscalation, .destructive, .sensitivePath:
         return .ask(
-            message: String.localized("tool.permission.bash.destructive"),
+            message: String.localized("toolPermission.commandExecution.destructive"),
             reason: classification.reason
         )
     case .network, .unknown:
         return .ask(
-            message: String.localized("tool.permission.bash.unknownRisk"),
+            message: String.localized("toolPermission.commandExecution.unknownRisk"),
             reason: classification.reason
         )
     }
 }
 
+private func webViewPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, context: ToolExecutionContext) -> ToolPermissionDecision? {
+    switch tool.permissionProfile {
+    case .externalInteraction:
+        let isFormInput = request.name == "web_view_type" || request.name == "web_view_select"
+        return .ask(
+            message: String.localized(isFormInput ? "toolPermission.externalInteraction.formInput" : "toolPermission.externalInteraction.pageAction"),
+            reason: isFormInput ? "web_view_form_interaction_requires_approval" : "web_view_page_interaction_requires_approval"
+        )
+
+    case .externalNavigation:
+        guard let rawURL = permissionArgumentString(for: ["url"], in: request.arguments) else {
+            return .ask(
+                message: String.localized("toolPermission.externalNavigation.open"),
+                reason: "web_view_open_requires_approval"
+            )
+        }
+
+        if let localPath = webViewLocalFilePath(from: rawURL) {
+            if isSensitivePermissionPath(localPath) {
+                return .ask(
+                    message: String.localized("toolPermission.path.sensitive"),
+                    reason: "sensitive_path_requires_approval"
+                )
+            }
+
+            guard let scopeProvider = context.toolProvider as? ToolPermissionScopeProviding else {
+                return .ask(
+                    message: String.localized("toolPermission.externalNavigation.localFile"),
+                    reason: "web_view_local_file_requires_approval",
+                    approvedReadableRootURL: URL(fileURLWithPath: localPath)
+                )
+            }
+
+            let resolvedPath = normalizedPermissionPath(localPath)
+            let readableRoots = (
+                scopeProvider.toolPermissionReadableRootURLs + context.session.sessionApprovedReadableRootURLs
+            )
+            .map { $0.standardizedFileURL.path }
+
+            if readableRoots.contains(where: { isPermissionPath(resolvedPath, withinRoot: $0) }) {
+                return ToolPermissionDecision(
+                    behavior: .allow,
+                    message: nil,
+                    reason: "web_view_local_file_read"
+                )
+            }
+
+            return .ask(
+                message: String.localized("toolPermission.externalNavigation.localFile"),
+                reason: "web_view_local_file_requires_approval",
+                approvedReadableRootURL: URL(fileURLWithPath: resolvedPath)
+            )
+        }
+
+        guard let origin = webViewOrigin(from: rawURL) else {
+            return ToolPermissionDecision(
+                behavior: .allow,
+                message: nil,
+                reason: "web_view_invalid_url_deferred_to_tool"
+            )
+        }
+
+        return .ask(
+            message: String(format: String.localized("toolPermission.externalNavigation.website"), origin),
+            reason: "web_view_origin_requires_approval"
+        )
+
+    default:
+        return nil
+    }
+}
+
 private func allowsDefaultReviewedToolWithoutPrompt(tool: any ToolExecutor) -> Bool {
     switch tool.permissionProfile {
-    case .autoReviewAllowedMutation,
-         .autoReviewAllowedInstructionOrchestration,
-         .cron:
+    case .trustedMutation,
+         .instructionOrchestration,
+         .scheduledAutomation,
+         .viewControl:
         return true
     case .standard,
-         .fileRead,
-         .fileMutation,
-         .fileDelete,
-         .bashCommand,
-         .internalStateMutation,
-         .teamMessage,
-         .teamPlanApproval,
-         .teamTaskStateUpdate:
+         .read,
+         .localMutation,
+         .localDeletion,
+         .commandExecution,
+         .internalStateUpdate,
+         .internalCommunication,
+         .planApproval,
+         .taskUpdate,
+         .externalNavigation,
+         .externalInteraction:
         return false
     }
 }
@@ -425,18 +510,21 @@ private func allowsAutoReviewedToolWithoutPrompt(tool: any ToolExecutor) -> Bool
     guard !tool.isReadOnly else { return true }
 
     switch tool.permissionProfile {
-    case .fileMutation:
+    case .localMutation:
         return tool.isDestructive
-    case .autoReviewAllowedMutation, .autoReviewAllowedInstructionOrchestration, .cron:
+    case .trustedMutation, .instructionOrchestration, .scheduledAutomation:
         return true
     case .standard,
-         .fileRead,
-         .fileDelete,
-         .bashCommand,
-         .internalStateMutation,
-         .teamMessage,
-         .teamPlanApproval,
-         .teamTaskStateUpdate:
+         .read,
+         .localDeletion,
+         .commandExecution,
+         .internalStateUpdate,
+         .internalCommunication,
+         .planApproval,
+         .taskUpdate,
+         .externalNavigation,
+         .externalInteraction,
+         .viewControl:
         return false
     }
 }
@@ -499,8 +587,47 @@ private func permissionArgumentStrings(for keys: [String], in arguments: String)
     }
 }
 
-private func fileMutationPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, context: ToolExecutionContext) -> ToolPermissionDecision? {
-    guard tool.permissionProfile == .fileMutation else {
+func webViewOriginArgument(in arguments: String) -> String? {
+    guard let rawURL = permissionArgumentString(for: ["url"], in: arguments) else {
+        return nil
+    }
+    return webViewOrigin(from: rawURL)
+}
+
+func webViewOrigin(from rawURL: String) -> String? {
+    let trimmed = rawURL.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let components = URLComponents(string: trimmed),
+          let scheme = components.scheme?.lowercased(),
+          scheme == "http" || scheme == "https",
+          let host = components.host?.lowercased(),
+          !host.isEmpty
+    else {
+        return nil
+    }
+
+    let port = components.port.map { ":\($0)" } ?? ""
+    return "\(scheme)://\(host)\(port)"
+}
+
+func normalizedWebViewOrigin(_ origin: String) -> String {
+    webViewOrigin(from: origin) ?? origin.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+}
+
+private func webViewLocalFilePath(from rawURL: String) -> String? {
+    let trimmed = rawURL.trimmingCharacters(in: .whitespacesAndNewlines)
+    let expandedPath = (trimmed as NSString).expandingTildeInPath
+    if expandedPath.hasPrefix("/") {
+        return normalizedPermissionPath(expandedPath)
+    }
+
+    guard let url = URL(string: trimmed), url.isFileURL else {
+        return nil
+    }
+    return normalizedPermissionPath(url.path)
+}
+
+private func localMutationPermissionDecision(for request: ToolRequest, tool: any ToolExecutor, context: ToolExecutionContext) -> ToolPermissionDecision? {
+    guard tool.permissionProfile == .localMutation else {
         return nil
     }
 
@@ -508,14 +635,14 @@ private func fileMutationPermissionDecision(for request: ToolRequest, tool: any 
     let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
     guard trimmedPath.hasPrefix("/") else {
         return .ask(
-            message: String.localized("tool.permission.mutating"),
+            message: String.localized("toolPermission.unclassifiedMutation"),
             reason: "workspace_relative_write_requires_approval"
         )
     }
 
     guard let scopeProvider = context.toolProvider as? ToolPermissionScopeProviding else {
         return .ask(
-            message: String.localized("tool.permission.writeOutsideWorkspace"),
+            message: String.localized("toolPermission.localMutation.absolutePathUnknownScope"),
             reason: "absolute_write_path_requires_approval"
         )
     }
@@ -524,14 +651,14 @@ private func fileMutationPermissionDecision(for request: ToolRequest, tool: any 
     if let workspaceRoot = scopeProvider.toolPermissionWorkspaceRootURL?.standardizedFileURL.path {
         if isPermissionPath(resolvedPath, withinRoot: workspaceRoot) {
             return .ask(
-                message: String.localized("tool.permission.mutating"),
+                message: String.localized("toolPermission.unclassifiedMutation"),
                 reason: "workspace_write_requires_approval"
             )
         }
     }
 
     return .ask(
-        message: String.localized("tool.permission.writeOutsideWorkspace"),
+        message: String.localized("toolPermission.localMutation.absolutePathUnknownScope"),
         reason: "absolute_write_path_requires_approval",
         approvedWritableRootURL: URL(fileURLWithPath: resolvedPath)
     )

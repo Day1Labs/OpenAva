@@ -49,18 +49,18 @@ final class ToolDefinitionSemanticsTests: XCTestCase {
         let byName = Dictionary(uniqueKeysWithValues: definitions.map { ($0.functionName, $0) })
 
         XCTAssertEqual(byName["fs_read"]?.isReadOnly, true)
-        XCTAssertEqual(byName["fs_read"]?.permissionProfile, .fileRead)
+        XCTAssertEqual(byName["fs_read"]?.permissionProfile, .read)
         XCTAssertEqual(byName["fs_read"]?.isConcurrencySafe, true)
         XCTAssertEqual(byName["fs_read"]?.maxResultSizeChars, 48 * 1024)
 
         XCTAssertEqual(byName["fs_write"]?.isReadOnly, false)
-        XCTAssertEqual(byName["fs_write"]?.permissionProfile, .fileMutation)
+        XCTAssertEqual(byName["fs_write"]?.permissionProfile, .localMutation)
         XCTAssertEqual(byName["fs_write"]?.isDestructive, true)
         XCTAssertEqual(byName["fs_write"]?.isConcurrencySafe, false)
-        XCTAssertEqual(byName["fs_delete"]?.permissionProfile, .fileDelete)
+        XCTAssertEqual(byName["fs_delete"]?.permissionProfile, .localDeletion)
 
         XCTAssertEqual(byName["fs_grep"]?.isReadOnly, true)
-        XCTAssertEqual(byName["fs_grep"]?.permissionProfile, .fileRead)
+        XCTAssertEqual(byName["fs_grep"]?.permissionProfile, .read)
         XCTAssertEqual(byName["fs_grep"]?.isConcurrencySafe, true)
         XCTAssertEqual(byName["fs_grep"]?.maxResultSizeChars, 24 * 1024)
     }
@@ -138,10 +138,32 @@ final class ToolDefinitionSemanticsTests: XCTestCase {
         XCTAssertEqual(byName["memory_recall"]?.permissionProfile, .standard)
         XCTAssertEqual(byName["memory_recall"]?.isConcurrencySafe, true)
         XCTAssertEqual(byName["memory_transcript_search"]?.isReadOnly, true)
-        XCTAssertEqual(byName["memory_upsert"]?.permissionProfile, .autoReviewAllowedMutation)
+        XCTAssertEqual(byName["memory_upsert"]?.permissionProfile, .trustedMutation)
         XCTAssertEqual(byName["memory_upsert"]?.isDestructive, true)
         XCTAssertEqual(byName["memory_forget"]?.permissionProfile, .standard)
         XCTAssertEqual(byName["memory_forget"]?.isDestructive, true)
+    }
+
+    @MainActor
+    func testWebViewDefinitionsExposePermissionSemantics() {
+        let definitions = WebViewService.shared.toolDefinitions()
+        let byName = Dictionary(uniqueKeysWithValues: definitions.map { ($0.functionName, $0) })
+
+        XCTAssertEqual(byName["web_view"]?.permissionProfile, .externalNavigation)
+        XCTAssertEqual(byName["web_view"]?.isReadOnly, false)
+
+        XCTAssertEqual(byName["web_view_snapshot"]?.permissionProfile, .read)
+        XCTAssertEqual(byName["web_view_snapshot"]?.isReadOnly, true)
+        XCTAssertEqual(byName["web_view_read"]?.permissionProfile, .read)
+        XCTAssertEqual(byName["web_view_read"]?.isReadOnly, true)
+
+        XCTAssertEqual(byName["web_view_click"]?.permissionProfile, .externalInteraction)
+        XCTAssertEqual(byName["web_view_type"]?.permissionProfile, .externalInteraction)
+        XCTAssertEqual(byName["web_view_select"]?.permissionProfile, .externalInteraction)
+
+        XCTAssertEqual(byName["web_view_scroll"]?.permissionProfile, .viewControl)
+        XCTAssertEqual(byName["web_view_navigate"]?.permissionProfile, .viewControl)
+        XCTAssertEqual(byName["web_view_close"]?.permissionProfile, .viewControl)
     }
 
     func testSessionTodoDefinitionUsesOpenAvaNameAndClaudeStyleSchema() throws {
@@ -149,7 +171,7 @@ final class ToolDefinitionSemanticsTests: XCTestCase {
         let definition = try XCTUnwrap(definitions.first { $0.functionName == "todo_write" })
 
         XCTAssertEqual(definition.command, "todo.write")
-        XCTAssertEqual(definition.permissionProfile, .internalStateMutation)
+        XCTAssertEqual(definition.permissionProfile, .internalStateUpdate)
         XCTAssertEqual(definition.isReadOnly, false)
         XCTAssertEqual(definition.isDestructive, false)
         XCTAssertEqual(definition.isConcurrencySafe, false)
@@ -224,7 +246,7 @@ final class ToolDefinitionSemanticsTests: XCTestCase {
 
         let definition = try XCTUnwrap(byName["javascript_execute"])
         XCTAssertEqual(definition.isReadOnly, false)
-        XCTAssertEqual(definition.permissionProfile, .autoReviewAllowedInstructionOrchestration)
+        XCTAssertEqual(definition.permissionProfile, .instructionOrchestration)
         XCTAssertEqual(definition.isDestructive, false)
         XCTAssertEqual(definition.isConcurrencySafe, false)
 

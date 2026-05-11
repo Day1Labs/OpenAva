@@ -1201,11 +1201,7 @@ extension ChatViewController: ChatToolPermissionViewControllerDelegate {
             case .alwaysAllowTool:
                 self.finishPresentedToolPermissionRequest(session: session) {
                     session.addPersistedToolPermissionRule(
-                        ToolPermissionRule(
-                            behavior: .allow,
-                            toolName: request.apiName,
-                            matcher: .tool
-                        )
+                        self.persistedBroadAllowRule(for: request)
                     )
                     session.approveToolPermissionRequest(id: request.id)
                 }
@@ -1215,6 +1211,24 @@ extension ChatViewController: ChatToolPermissionViewControllerDelegate {
                 }
             }
         }
+    }
+
+    private func persistedBroadAllowRule(for request: ConversationSession.PendingToolPermissionRequest) -> ToolPermissionRule {
+        if request.apiName == "web_view",
+           let origin = webViewOriginArgument(in: request.arguments)
+        {
+            return ToolPermissionRule(
+                behavior: .allow,
+                toolName: request.apiName,
+                matcher: .urlOrigin(origin)
+            )
+        }
+
+        return ToolPermissionRule(
+            behavior: .allow,
+            toolName: request.apiName,
+            matcher: .tool
+        )
     }
 }
 

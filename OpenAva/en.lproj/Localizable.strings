@@ -582,16 +582,24 @@
 "settings.skills.editor.defaultTemplate.purpose" = "# Purpose\n\nDescribe when and why this skill should be used.\n\n# Steps\n\n1. Add clear execution steps.\n2. Keep outputs actionable.\n";
 
 // Tool Permission & Execution Strings
-"tool.permission.destructive" = "Tool execution requires approval because this tool can modify or delete data.";
-"tool.permission.mutating" = "Tool execution requires approval because this tool can modify local app state or invoke additional instructions.";
-"tool.permission.teamShutdown" = "Stopping a teammate requires approval.";
-"tool.permission.rule.denied" = "Tool execution was denied by a remembered permission rule.";
-"tool.permission.rule.ask" = "Tool execution requires approval because a permission rule asks before running this tool.";
-"tool.permission.readOutsideWorkspace" = "Tool execution requires approval because it reads an absolute path outside the known workspace scope.";
-"tool.permission.readOutsideAllowed" = "Tool execution requires approval because it reads an absolute path outside the allowed working directories.";
-"tool.permission.writeOutsideWorkspace" = "Tool execution requires approval because it attempts to write to an absolute path outside the known workspace scope.";
-"tool.permission.sensitivePath" = "Tool execution requires approval because it touches a sensitive path.";
-"tool.permission.deleteWorkspaceRoot" = "Deleting the workspace root requires approval.";
-"tool.permission.bash.unclassified" = "Bash command requires approval because it could not be classified.";
-"tool.permission.bash.unknownRisk" = "Bash command requires approval because it may modify local state, access the network, or has unknown risk.";
-"tool.permission.bash.destructive" = "Bash command requires approval because it is potentially destructive, privileged, or touches a sensitive path.";
+"toolPermission.destructiveMutation" = "This action can modify or delete data and needs your approval.";
+"toolPermission.unclassifiedMutation" = "This action may change app state or run additional instructions and needs your approval.";
+"toolPermission.internalCommunication.shutdownRequest" = "Stopping another agent needs your approval.";
+"toolPermission.rule.denied" = "A remembered permission rule denied this action.";
+"toolPermission.rule.ask" = "A remembered permission rule requires approval before this action runs.";
+"toolPermission.read.absolutePathUnknownScope" = "Reading this absolute path needs approval because it is outside the known workspace scope.";
+"toolPermission.read.absolutePathOutsideAllowedRoots" = "Reading this absolute path needs approval because it is outside the allowed working directories.";
+"toolPermission.localMutation.absolutePathUnknownScope" = "Writing to this absolute path needs approval because it is outside the known workspace scope.";
+"toolPermission.path.sensitive" = "This action touches a sensitive path and needs your approval.";
+"toolPermission.localDeletion.workspaceRoot" = "Deleting the workspace root needs your approval.";
+"toolPermission.commandExecution.unclassified" = "This command could not be classified and needs your approval.";
+"toolPermission.commandExecution.unknownRisk" = "This command may modify local state, access the network, or has unknown risk.";
+"toolPermission.commandExecution.destructive" = "This command may be destructive, require elevated privileges, or touch a sensitive path.";
+"toolPermission.externalNavigation.open" = "Opening this external view needs your approval.";
+"toolPermission.externalNavigation.website" = "Opening pages from %@ needs your approval.";
+"toolPermission.externalNavigation.localFile" = "Opening this local file needs your approval.";
+"toolPermission.externalInteraction.pageAction" = "Interacting with this page needs approval because it may trigger actions on the site.";
+"toolPermission.externalInteraction.formInput" = "Entering or selecting values on this page needs approval because it may submit data to the site.";
+"toolPermission.remember.allowWebsite" = "Always allow pages from this website";
+"toolPermission.remember.allowWebsite.subtitle" = "Do not ask again when opening pages from the same website.";
+"toolPermission.remember.allowExactExternalInteraction.subtitle" = "Do not ask again for this exact page action and arguments.";

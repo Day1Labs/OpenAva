@@ -50,6 +50,18 @@ final class ChatToolPermissionViewController: UIViewController {
         }
     }
 
+    private var isWebViewOpenRequest: Bool {
+        apiName == "web_view" && argumentsText.flatMap(webViewOriginArgument(in:)) != nil
+    }
+
+    private var isHighRiskWebViewInteraction: Bool {
+        apiName == "web_view_click" || apiName == "web_view_type" || apiName == "web_view_select"
+    }
+
+    private var allowsBroadRememberChoice: Bool {
+        !isHighRiskWebViewInteraction
+    }
+
     init(toolName: String, message: String, apiName: String, argumentsText: String?) {
         self.toolName = toolName
         self.requestMessage = message
@@ -355,14 +367,16 @@ final class ChatToolPermissionViewController: UIViewController {
         options.isHidden = true
         self.rememberOptionsContainer = options
 
-        options.addArrangedSubview(makeRememberOption(
-            title: String.localized("Always allow for this tool"),
-            subtitle: String.localized("Skip approval for any future call to this tool."),
-            choice: .alwaysTool
-        ))
+        if allowsBroadRememberChoice {
+            options.addArrangedSubview(makeRememberOption(
+                title: broadRememberTitle(),
+                subtitle: broadRememberSubtitle(),
+                choice: .alwaysTool
+            ))
+        }
         options.addArrangedSubview(makeRememberOption(
             title: String.localized("Always allow for this exact request"),
-            subtitle: String.localized("Skip approval only when the same arguments are used again."),
+            subtitle: exactRememberSubtitle(),
             choice: .alwaysExact
         ))
 
@@ -426,8 +440,34 @@ final class ChatToolPermissionViewController: UIViewController {
     }
 
     private func selectRemember(choice: RememberChoice) {
+        guard choice != .alwaysTool || allowsBroadRememberChoice else {
+            rememberChoice = .once
+            refreshRememberOptionStyles()
+            return
+        }
         rememberChoice = (rememberChoice == choice) ? .once : choice
         refreshRememberOptionStyles()
+    }
+
+    private func broadRememberTitle() -> String {
+        if isWebViewOpenRequest {
+            return String.localized("toolPermission.remember.allowWebsite")
+        }
+        return String.localized("Always allow for this tool")
+    }
+
+    private func broadRememberSubtitle() -> String {
+        if isWebViewOpenRequest {
+            return String.localized("toolPermission.remember.allowWebsite.subtitle")
+        }
+        return String.localized("Skip approval for any future call to this tool.")
+    }
+
+    private func exactRememberSubtitle() -> String {
+        if isHighRiskWebViewInteraction {
+            return String.localized("toolPermission.remember.allowExactExternalInteraction.subtitle")
+        }
+        return String.localized("Skip approval only when the same arguments are used again.")
     }
 
     private func refreshRememberOptionStyles() {

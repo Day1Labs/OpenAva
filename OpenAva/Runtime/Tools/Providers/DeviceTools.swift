@@ -228,7 +228,7 @@ final class DeviceTools: ToolDefinitionProvider {
                     ],
                     "required": ["message"],
                 ],
-                permissionProfile: .autoReviewAllowedMutation
+                permissionProfile: .trustedMutation
             ),
             makeTool(
                 functionName: "location_get",
@@ -324,7 +324,7 @@ final class DeviceTools: ToolDefinitionProvider {
                     "required": ["inputPath"],
                     "additionalProperties": false,
                 ],
-                permissionProfile: .autoReviewAllowedMutation
+                permissionProfile: .trustedMutation
             ),
             makeTool(
                 functionName: "contacts_search",
@@ -357,7 +357,7 @@ final class DeviceTools: ToolDefinitionProvider {
                     ],
                     "additionalProperties": false,
                 ],
-                permissionProfile: .autoReviewAllowedMutation
+                permissionProfile: .trustedMutation
             ),
             makeTool(
                 functionName: "calendar_events",
@@ -394,7 +394,7 @@ final class DeviceTools: ToolDefinitionProvider {
                     "required": ["title", "startISO", "endISO"],
                     "additionalProperties": false,
                 ],
-                permissionProfile: .autoReviewAllowedMutation
+                permissionProfile: .trustedMutation
             ),
             makeTool(
                 functionName: "reminders_list",
@@ -427,7 +427,7 @@ final class DeviceTools: ToolDefinitionProvider {
                     "required": ["title"],
                     "additionalProperties": false,
                 ],
-                permissionProfile: .autoReviewAllowedMutation
+                permissionProfile: .trustedMutation
             ),
             makeTool(
                 functionName: "cron",
@@ -451,7 +451,7 @@ final class DeviceTools: ToolDefinitionProvider {
                     "required": ["action"],
                     "additionalProperties": false,
                 ],
-                permissionProfile: .cron
+                permissionProfile: .scheduledAutomation
             ),
             makeTool(
                 functionName: "camera_list",
@@ -535,7 +535,7 @@ final class DeviceTools: ToolDefinitionProvider {
                         "required": ["title", "body"],
                         "additionalProperties": false,
                     ],
-                    permissionProfile: .autoReviewAllowedMutation
+                    permissionProfile: .trustedMutation
                 ),
             ])
         }

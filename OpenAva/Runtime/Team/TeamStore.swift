@@ -10,6 +10,7 @@ enum TeamStore {
     private enum Storage {
         static let directoryName = "teams"
     }
+
     private static var localizedAllAgentsTeamName: String {
         L10n.tr("chat.menu.allAgentsTeam")
     }

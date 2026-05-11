@@ -19,7 +19,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAsksForAbsoluteReadPathOutsideAllowedRoots() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-read-absolute", name: "fs_read", arguments: #"{"path":"/tmp/outside.txt"}"#),
-            makeTool(functionName: "fs_read", isReadOnly: true, permissionProfile: .fileRead),
+            makeTool(functionName: "fs_read", isReadOnly: true, permissionProfile: .read),
             makeContext(toolProvider: PermissionScopeToolProvider(
                 workspaceRootURL: URL(fileURLWithPath: "/workspace"),
                 readableRootURLs: [URL(fileURLWithPath: "/workspace")]
@@ -46,7 +46,7 @@ final class CanUseToolTests: XCTestCase {
 
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-read-denied", name: "fs_read", arguments: #"{"path":"/tmp/outside.txt"}"#),
-            makeTool(functionName: "fs_read", isReadOnly: true, permissionProfile: .fileRead),
+            makeTool(functionName: "fs_read", isReadOnly: true, permissionProfile: .read),
             makeContext(
                 session: session,
                 toolProvider: PermissionScopeToolProvider(
@@ -78,10 +78,10 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAllowsTeamMutationTools() async throws {
         let definitions = TeamTools().toolDefinitions()
         let expectedReasons = [
-            "team_message_send": "internal_team_message",
-            "team_plan_approve": "team_plan_approval",
-            "team_task_create": "team_task_state_update",
-            "team_task_update": "team_task_state_update",
+            "team_message_send": "internal_communication",
+            "team_plan_approve": "plan_approval",
+            "team_task_create": "task_update",
+            "team_task_update": "task_update",
         ]
 
         for (toolName, expectedReason) in expectedReasons {
@@ -114,7 +114,7 @@ final class CanUseToolTests: XCTestCase {
 
         XCTAssertEqual(decision.behavior, .ask)
         XCTAssertEqual(decision.reason, "team_shutdown_requires_approval")
-        XCTAssertEqual(decision.message, "Stopping a teammate requires approval.")
+        XCTAssertEqual(decision.message, "Stopping another agent needs your approval.")
     }
 
     func testDefaultToolPermissionPolicyAllowsTodoWriteWithoutPrompt() async throws {
@@ -169,7 +169,7 @@ final class CanUseToolTests: XCTestCase {
 
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-auto-write", name: "fs_write", arguments: #"{"path":"Sources/App.swift","content":"x"}"#),
-            makeTool(functionName: "fs_write", permissionProfile: .fileMutation, isDestructive: true),
+            makeTool(functionName: "fs_write", permissionProfile: .localMutation, isDestructive: true),
             makeContext(session: session)
         )
 
@@ -186,7 +186,7 @@ final class CanUseToolTests: XCTestCase {
 
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-auto-bash-write", name: "bash", arguments: #"{"command":"go test ./..."}"#),
-            makeTool(functionName: "bash", permissionProfile: .bashCommand, isDestructive: true),
+            makeTool(functionName: "bash", permissionProfile: .commandExecution, isDestructive: true),
             makeContext(session: session)
         )
 
@@ -197,7 +197,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyStillAsksForWriteLocalBashOutsideAutoReviewMode() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-bash-write", name: "bash", arguments: #"{"command":"go test ./..."}"#),
-            makeTool(functionName: "bash", permissionProfile: .bashCommand, isDestructive: true),
+            makeTool(functionName: "bash", permissionProfile: .commandExecution, isDestructive: true),
             makeContext()
         )
 
@@ -214,7 +214,7 @@ final class CanUseToolTests: XCTestCase {
 
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-auto-bash-sensitive", name: "bash", arguments: #"{"command":"ls ~/.ssh"}"#),
-            makeTool(functionName: "bash", permissionProfile: .bashCommand, isDestructive: true),
+            makeTool(functionName: "bash", permissionProfile: .commandExecution, isDestructive: true),
             makeContext(session: session)
         )
 
@@ -224,15 +224,15 @@ final class CanUseToolTests: XCTestCase {
 
     func testDefaultToolPermissionPolicyAllowsDefaultAllowedMutationProfiles() async {
         let cases = [
-            "memory_upsert": makeTool(functionName: "memory_upsert", permissionProfile: .autoReviewAllowedMutation, isDestructive: true),
-            "calendar_add": makeTool(functionName: "calendar_add", permissionProfile: .autoReviewAllowedMutation),
-            "reminders_add": makeTool(functionName: "reminders_add", permissionProfile: .autoReviewAllowedMutation),
-            "text_to_social_images": makeTool(functionName: "text_to_social_images", permissionProfile: .autoReviewAllowedMutation),
-            "image_remove_background": makeTool(functionName: "image_remove_background", permissionProfile: .autoReviewAllowedMutation),
-            "contacts_add": makeTool(functionName: "contacts_add", permissionProfile: .autoReviewAllowedMutation),
-            "blog_watch": makeTool(functionName: "blog_watch", permissionProfile: .autoReviewAllowedMutation),
-            "notify_user": makeTool(functionName: "notify_user", permissionProfile: .autoReviewAllowedMutation),
-            "watch_notify": makeTool(functionName: "watch_notify", permissionProfile: .autoReviewAllowedMutation),
+            "memory_upsert": makeTool(functionName: "memory_upsert", permissionProfile: .trustedMutation, isDestructive: true),
+            "calendar_add": makeTool(functionName: "calendar_add", permissionProfile: .trustedMutation),
+            "reminders_add": makeTool(functionName: "reminders_add", permissionProfile: .trustedMutation),
+            "text_to_social_images": makeTool(functionName: "text_to_social_images", permissionProfile: .trustedMutation),
+            "image_remove_background": makeTool(functionName: "image_remove_background", permissionProfile: .trustedMutation),
+            "contacts_add": makeTool(functionName: "contacts_add", permissionProfile: .trustedMutation),
+            "blog_watch": makeTool(functionName: "blog_watch", permissionProfile: .trustedMutation),
+            "notify_user": makeTool(functionName: "notify_user", permissionProfile: .trustedMutation),
+            "watch_notify": makeTool(functionName: "watch_notify", permissionProfile: .trustedMutation),
         ]
 
         for (toolName, tool) in cases {
@@ -247,6 +247,94 @@ final class CanUseToolTests: XCTestCase {
         }
     }
 
+    func testDefaultToolPermissionPolicyAsksBeforeOpeningWebViewWebsite() async {
+        let decision = await defaultToolPermissionPolicy(
+            ToolRequest(id: "tool-web-open", name: "web_view", arguments: #"{"url":"https://example.com/docs"}"#),
+            makeTool(functionName: "web_view", permissionProfile: .externalNavigation),
+            makeContext()
+        )
+
+        XCTAssertEqual(decision.behavior, .ask)
+        XCTAssertEqual(decision.reason, "web_view_origin_requires_approval")
+        XCTAssertEqual(decision.message, "Opening pages from https://example.com needs your approval.")
+    }
+
+    func testDefaultToolPermissionPolicyUsesRememberedWebViewOriginRule() async {
+        let session = ConversationSession(
+            id: UUID().uuidString,
+            configuration: .init(storage: DisposableStorageProvider())
+        )
+        session.addSessionToolPermissionRule(
+            ToolPermissionRule(
+                behavior: .allow,
+                toolName: "web_view",
+                matcher: .urlOrigin("https://example.com")
+            )
+        )
+
+        let decision = await defaultToolPermissionPolicy(
+            ToolRequest(id: "tool-web-open-origin", name: "web_view", arguments: #"{"url":"https://example.com/other?page=1"}"#),
+            makeTool(functionName: "web_view", permissionProfile: .externalNavigation),
+            makeContext(session: session)
+        )
+
+        XCTAssertEqual(decision.behavior, .allow)
+        XCTAssertEqual(decision.reason, "permission_rule_allow_session")
+    }
+
+    func testDefaultToolPermissionPolicyAsksBeforeOpeningSensitiveWebViewLocalFile() async {
+        let decision = await defaultToolPermissionPolicy(
+            ToolRequest(id: "tool-web-local-sensitive", name: "web_view", arguments: #"{"url":"~/.ssh/id_rsa"}"#),
+            makeTool(functionName: "web_view", permissionProfile: .externalNavigation),
+            makeContext()
+        )
+
+        XCTAssertEqual(decision.behavior, .ask)
+        XCTAssertEqual(decision.reason, "sensitive_path_requires_approval")
+    }
+
+    func testDefaultToolPermissionPolicyAllowsLowRiskWebViewTools() async {
+        let cases = [
+            ("web_view_snapshot", ToolPermissionProfile.read),
+            ("web_view_read", ToolPermissionProfile.read),
+            ("web_view_scroll", ToolPermissionProfile.viewControl),
+            ("web_view_navigate", ToolPermissionProfile.viewControl),
+            ("web_view_close", ToolPermissionProfile.viewControl),
+        ]
+
+        for (toolName, profile) in cases {
+            let decision = await defaultToolPermissionPolicy(
+                ToolRequest(id: "tool-\(toolName)", name: toolName, arguments: "{}"),
+                makeTool(functionName: toolName, isReadOnly: profile == .read, permissionProfile: profile),
+                makeContext()
+            )
+
+            XCTAssertEqual(decision.behavior, .allow, toolName)
+            if profile == .viewControl {
+                XCTAssertEqual(decision.reason, "default_allowed_tool_profile", toolName)
+            }
+        }
+    }
+
+    func testDefaultToolPermissionPolicyAsksBeforeWebViewInteractions() async {
+        let cases = [
+            ("web_view_click", #"{"ref":"1"}"#, "web_view_page_interaction_requires_approval"),
+            ("web_view_type", #"{"ref":"1","text":"hello"}"#, "web_view_form_interaction_requires_approval"),
+            ("web_view_select", #"{"ref":"1","value":"a"}"#, "web_view_form_interaction_requires_approval"),
+        ]
+
+        for (toolName, arguments, expectedReason) in cases {
+            let decision = await defaultToolPermissionPolicy(
+                ToolRequest(id: "tool-\(toolName)", name: toolName, arguments: arguments),
+                makeTool(functionName: toolName, permissionProfile: .externalInteraction),
+                makeContext()
+            )
+
+            XCTAssertEqual(decision.behavior, .ask, toolName)
+            XCTAssertEqual(decision.reason, expectedReason, toolName)
+        }
+    }
+
     func testDefaultToolPermissionPolicyAllowsProfiledLocalMutationToolsInAutoReviewMode() async {
         let session = ConversationSession(
             id: UUID().uuidString,
@@ -255,10 +343,10 @@ final class CanUseToolTests: XCTestCase {
         session.setToolPermissionMode(.auto)
 
         let cases = [
-            "memory_upsert": makeTool(functionName: "memory_upsert", permissionProfile: .autoReviewAllowedMutation, isDestructive: true),
-            "calendar_add": makeTool(functionName: "calendar_add", permissionProfile: .autoReviewAllowedMutation),
-            "reminders_add": makeTool(functionName: "reminders_add", permissionProfile: .autoReviewAllowedMutation),
-            "text_to_social_images": makeTool(functionName: "text_to_social_images", permissionProfile: .autoReviewAllowedMutation),
+            "memory_upsert": makeTool(functionName: "memory_upsert", permissionProfile: .trustedMutation, isDestructive: true),
+            "calendar_add": makeTool(functionName: "calendar_add", permissionProfile: .trustedMutation),
+            "reminders_add": makeTool(functionName: "reminders_add", permissionProfile: .trustedMutation),
+            "text_to_social_images": makeTool(functionName: "text_to_social_images", permissionProfile: .trustedMutation),
         ]
 
         for (toolName, tool) in cases {
@@ -291,7 +379,7 @@ final class CanUseToolTests: XCTestCase {
         for arguments in cases {
             let decision = await defaultToolPermissionPolicy(
                 ToolRequest(id: "tool-auto-cron", name: "cron", arguments: arguments),
-                makeTool(functionName: "cron", permissionProfile: .cron),
+                makeTool(functionName: "cron", permissionProfile: .scheduledAutomation),
                 makeContext(session: session)
             )
 
@@ -303,7 +391,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAllowsCronOutsideAutoReviewMode() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-cron-remove", name: "cron", arguments: #"{"action":"remove","id":"job-1"}"#),
-            makeTool(functionName: "cron", permissionProfile: .cron),
+            makeTool(functionName: "cron", permissionProfile: .scheduledAutomation),
             makeContext()
         )
 
@@ -322,7 +410,7 @@ final class CanUseToolTests: XCTestCase {
         let cases = [
             (
                 ToolRequest(id: "tool-auto-js", name: "javascript_execute", arguments: #"{"code":"return 1"}"#),
-                makeTool(functionName: "javascript_execute", permissionProfile: .autoReviewAllowedInstructionOrchestration)
+                makeTool(functionName: "javascript_execute", permissionProfile: .instructionOrchestration)
             ),
             (
                 ToolRequest(id: "tool-auto-skill", name: "skill_invoke", arguments: #"{"name":"commit"}"#),
@@ -372,7 +460,7 @@ final class CanUseToolTests: XCTestCase {
                 name: "image_remove_background",
                 arguments: #"{"inputPath":"image.png","outputPath":"~/.ssh/output.png"}"#
             ),
-            makeTool(functionName: "image_remove_background", permissionProfile: .autoReviewAllowedMutation),
+            makeTool(functionName: "image_remove_background", permissionProfile: .trustedMutation),
             makeContext(session: session)
         )
 
@@ -395,7 +483,7 @@ final class CanUseToolTests: XCTestCase {
 
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-write-rule", name: "fs_write", arguments: #"{"path":"Sources/App.swift","content":"x"}"#),
-            makeTool(functionName: "fs_write", permissionProfile: .fileMutation, isDestructive: true),
+            makeTool(functionName: "fs_write", permissionProfile: .localMutation, isDestructive: true),
             makeContext(session: session)
         )
 
@@ -418,7 +506,7 @@ final class CanUseToolTests: XCTestCase {
 
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-bash-deny-rule", name: "bash", arguments: #"{"command":"curl https://example.com"}"#),
-            makeTool(functionName: "bash", permissionProfile: .bashCommand, isDestructive: true),
+            makeTool(functionName: "bash", permissionProfile: .commandExecution, isDestructive: true),
             makeContext(session: session)
         )
 
@@ -429,7 +517,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAllowsReadOnlyBashCommands() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-bash-readonly", name: "bash", arguments: #"{"command":"git status && git diff"}"#),
-            makeTool(functionName: "bash", permissionProfile: .bashCommand, isDestructive: true),
+            makeTool(functionName: "bash", permissionProfile: .commandExecution, isDestructive: true),
             makeContext()
         )
 
@@ -440,7 +528,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAsksForHighRiskBashCommands() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-bash-risk", name: "bash", arguments: #"{"command":"sudo rm -rf /tmp/example"}"#),
-            makeTool(functionName: "bash", permissionProfile: .bashCommand, isDestructive: true),
+            makeTool(functionName: "bash", permissionProfile: .commandExecution, isDestructive: true),
             makeContext()
         )
 
@@ -451,7 +539,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAsksForSensitivePathEvenWhenReadOnly() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-sensitive-read", name: "fs_read", arguments: #"{"path":"~/.ssh/id_rsa"}"#),
-            makeTool(functionName: "fs_read", isReadOnly: true, permissionProfile: .fileRead),
+            makeTool(functionName: "fs_read", isReadOnly: true, permissionProfile: .read),
             makeContext()
         )
 
@@ -520,7 +608,7 @@ final class CanUseToolTests: XCTestCase {
     func testDefaultToolPermissionPolicyAllowsJavaScriptExecuteOutsideAutoReviewMode() async {
         let decision = await defaultToolPermissionPolicy(
             ToolRequest(id: "tool-js", name: "javascript_execute", arguments: "{}"),
-            makeTool(functionName: "javascript_execute", permissionProfile: .autoReviewAllowedInstructionOrchestration),
+            makeTool(functionName: "javascript_execute", permissionProfile: .instructionOrchestration),
             makeContext()
         )
 
