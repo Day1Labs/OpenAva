@@ -82,11 +82,11 @@ struct AppConfig {
 
         func selectedModel(preferredID: UUID?) -> LLMModel? {
             if let preferredID,
-               let matchedModel = models.first(where: { $0.id == preferredID })
+               let matchedModel = models.first(where: { $0.id == preferredID && $0.isConfigured })
             {
                 return matchedModel
             }
-            return models.first
+            return models.first(where: \.isConfigured)
         }
 
         func isConfigured(preferredID: UUID?) -> Bool {

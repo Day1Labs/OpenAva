@@ -652,11 +652,11 @@ final class AppContainerStore {
         preferredID: UUID?
     ) -> UUID? {
         if let preferredID,
-           collection.models.contains(where: { $0.id == preferredID })
+           collection.models.contains(where: { $0.id == preferredID && $0.isConfigured })
         {
             return preferredID
         }
 
-        return collection.models.first?.id
+        return collection.models.first(where: \.isConfigured)?.id
     }
 }
