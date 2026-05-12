@@ -62,21 +62,21 @@ final class CronNotificationRouterTests: XCTestCase {
             tasks: [],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -93,7 +93,7 @@ final class CronNotificationRouterTests: XCTestCase {
         let request = makeNotificationRequest(
             body: "Run the scheduled follow-up",
             kind: CronJobKind.notify,
-            agentID: agent.id.uuidString,
+            agentID: agent.id,
             identifier: "cron.test.notify"
         )
 
@@ -109,7 +109,7 @@ final class CronNotificationRouterTests: XCTestCase {
 
         let updatedMember = try XCTUnwrap(
             coordinator.snapshot(context: .init(sessionID: nil, senderMemberID: nil))?
-                .team.members.first(where: { $0.id == agent.id.uuidString })
+                .team.members.first(where: { $0.id == agent.id })
         )
         XCTAssertEqual(updatedMember.status, .busy)
     }
@@ -133,7 +133,7 @@ final class CronNotificationRouterTests: XCTestCase {
         let request = makeNotificationRequest(
             body: "Recurring follow-up",
             kind: CronJobKind.notify,
-            agentID: UUID().uuidString,
+            agentID: OpenAvaID.generate(.agent),
             identifier: "cron.test.orphan.every",
             schedule: "every"
         )
@@ -149,7 +149,7 @@ final class CronNotificationRouterTests: XCTestCase {
         let request = makeNotificationRequest(
             body: "One-shot follow-up",
             kind: CronJobKind.notify,
-            agentID: UUID().uuidString,
+            agentID: OpenAvaID.generate(.agent),
             identifier: "cron.test.orphan.at",
             schedule: "at"
         )

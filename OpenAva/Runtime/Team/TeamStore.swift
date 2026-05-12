@@ -5,7 +5,7 @@ struct TeamStateSnapshot: Equatable {
 }
 
 enum TeamStore {
-    static let allAgentsTeamID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+    static let allAgentsTeamID = "team_00000000000000000000000001"
 
     private enum Storage {
         static let directoryName = "teams"
@@ -23,7 +23,7 @@ enum TeamStore {
         return TeamStateSnapshot(teams: resolvedTeams.sorted { $0.createdAt < $1.createdAt })
     }
 
-    static func team(id teamID: UUID, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) -> TeamProfile? {
+    static func team(id teamID: String, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) -> TeamProfile? {
         load(fileManager: fileManager, workspaceRootURL: workspaceRootURL).teams.first { $0.id == teamID }
     }
 
@@ -42,14 +42,14 @@ enum TeamStore {
         name: String,
         emoji: String = "👥",
         description: String? = nil,
-        agentPoolIDs: [UUID] = [],
+        agentPoolIDs: [String] = [],
         defaultTopology: TeamTopologyKind = .automatic,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> TeamProfile? {
         var state = load(fileManager: fileManager, workspaceRootURL: workspaceRootURL)
         let assignedIDs = Set(state.teams.flatMap(\.agentPoolIDs))
-        let normalizedAgentPoolIDs = agentPoolIDs.reduce(into: [UUID]()) { partialResult, id in
+        let normalizedAgentPoolIDs = agentPoolIDs.reduce(into: [String]()) { partialResult, id in
             if !partialResult.contains(id), !assignedIDs.contains(id) {
                 partialResult.append(id)
             }
@@ -92,7 +92,7 @@ enum TeamStore {
         return applyMetadata(to: TeamProfile(id: team.id, name: "", agentPoolIDs: []), fileManager: fileManager, workspaceRootURL: workspaceRootURL)
     }
 
-    static func deleteTeam(_ teamID: UUID, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) {
+    static func deleteTeam(_ teamID: String, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) {
         var state = load(fileManager: fileManager, workspaceRootURL: workspaceRootURL)
         state.teams.removeAll { $0.id == teamID }
         persist(state: state, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
@@ -101,7 +101,7 @@ enum TeamStore {
         }
     }
 
-    static func teams(containing agentID: UUID, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) -> [TeamProfile] {
+    static func teams(containing agentID: String, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) -> [TeamProfile] {
         load(fileManager: fileManager, workspaceRootURL: workspaceRootURL).teams.filter { $0.agentPoolIDs.contains(agentID) }
     }
 
@@ -124,7 +124,7 @@ enum TeamStore {
 
     @discardableResult
     static func updateTeam(
-        _ teamID: UUID,
+        _ teamID: String,
         name: String,
         emoji: String,
         description: String?,
@@ -149,7 +149,7 @@ enum TeamStore {
 
     @discardableResult
     static func renameTeam(
-        _ teamID: UUID,
+        _ teamID: String,
         name: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
@@ -194,8 +194,8 @@ enum TeamStore {
 
     @discardableResult
     static func addAgents(
-        _ agentIDs: [UUID],
-        to teamID: UUID,
+        _ agentIDs: [String],
+        to teamID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> TeamProfile? {
@@ -215,8 +215,8 @@ enum TeamStore {
 
     @discardableResult
     static func removeAgent(
-        _ agentID: UUID,
-        from teamID: UUID,
+        _ agentID: String,
+        from teamID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> TeamProfile? {
@@ -225,7 +225,7 @@ enum TeamStore {
         }
     }
 
-    static func removeAgentReferences(_ agentID: UUID, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) {
+    static func removeAgentReferences(_ agentID: String, fileManager: FileManager = .default, workspaceRootURL: URL? = nil) {
         let state = load(fileManager: fileManager, workspaceRootURL: workspaceRootURL)
         for team in state.teams where team.agentPoolIDs.contains(agentID) {
             _ = mutateTeam(team.id, fileManager: fileManager, workspaceRootURL: workspaceRootURL) { team in
@@ -236,7 +236,7 @@ enum TeamStore {
 
     @discardableResult
     private static func mutateTeam(
-        _ teamID: UUID,
+        _ teamID: String,
         fileManager: FileManager,
         workspaceRootURL: URL?,
         mutate: (inout TeamProfile) -> Void
@@ -287,7 +287,7 @@ enum TeamStore {
 
     @discardableResult
     static func setSelectedModel(
-        _ selectedModelID: UUID?,
+        _ selectedModelID: String?,
         for context: ActiveSessionContext,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
@@ -343,8 +343,8 @@ enum TeamStore {
     }
 
     static func repairSelectedModel(
-        afterDeleting deletedModelID: UUID,
-        replacement: UUID?,
+        afterDeleting deletedModelID: String,
+        replacement: String?,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) {
@@ -401,14 +401,14 @@ enum TeamStore {
                 workspaceRootURL: workspaceRootURL,
                 createDirectoryIfNeeded: createDirectoryIfNeeded
             )?
-                .appendingPathComponent(allAgentsTeamID.uuidString, isDirectory: true)
+                .appendingPathComponent(allAgentsTeamID, isDirectory: true)
         case let .team(teamID):
             return storageDirectoryURL(
                 fileManager: fileManager,
                 workspaceRootURL: workspaceRootURL,
                 createDirectoryIfNeeded: createDirectoryIfNeeded
             )?
-                .appendingPathComponent(teamID.uuidString, isDirectory: true)
+                .appendingPathComponent(teamID, isDirectory: true)
         case .agent:
             return nil
         }

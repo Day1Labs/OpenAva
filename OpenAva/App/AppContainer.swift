@@ -32,14 +32,14 @@ struct AppContainer {
             workspaceRootURL: config.agent.workspaceRootURL,
             supportRootURL: config.agent.supportRootURL,
             teamsRootURL: TeamStore.storageDirectoryURL(workspaceRootURL: config.agent.workspaceRootURL, createDirectoryIfNeeded: false),
-            modelConfig: config.selectedLLMModel,
+            modelConfig: config.selectedModel,
             agentCount: agentCount
         )
         let localization = LocalizationService()
 
         // Create ChatClient from the selected LLM model configuration.
         let chatClient: (any ChatClient)? = {
-            guard let modelConfig = config.selectedLLMModel,
+            guard let modelConfig = config.selectedModel,
                   modelConfig.isConfigured
             else {
                 return nil

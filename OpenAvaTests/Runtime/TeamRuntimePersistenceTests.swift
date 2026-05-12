@@ -160,21 +160,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             tasks: [],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: "Existing approved plan context",
                     planModeRequired: true,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.awaitingPlanApproval.rawValue,
                     pendingPlanRequestID: "pending-plan"
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -250,21 +250,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             tasks: [],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -339,9 +339,9 @@ final class TeamRuntimePersistenceTests: XCTestCase {
         )
         coordinator.reload()
 
-        let snapshot = coordinator.snapshot(context: .init(sessionID: "\(agent.id.uuidString)::main", senderMemberID: nil))
+        let snapshot = coordinator.snapshot(context: .init(sessionID: "\(agent.id)::main", senderMemberID: nil))
 
-        XCTAssertEqual(Set(snapshot?.team.members.map(\.id) ?? []), Set([agent.id.uuidString, peer.id.uuidString]))
+        XCTAssertEqual(Set(snapshot?.team.members.map(\.id) ?? []), Set([agent.id, peer.id]))
     }
 
     @MainActor
@@ -391,21 +391,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             tasks: [],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: true,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.awaitingPlanApproval.rawValue,
                     pendingPlanRequestID: "pending-plan"
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -499,21 +499,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             ],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -533,7 +533,7 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             detail: nil,
             status: .inProgress,
             owner: nil,
-            context: .init(sessionID: "\(agent.id.uuidString)::main", senderMemberID: agent.id.uuidString)
+            context: .init(sessionID: "\(agent.id)::main", senderMemberID: agent.id)
         )
 
         XCTAssertEqual(updated.status, .inProgress)
@@ -579,21 +579,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             ],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -613,7 +613,7 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             detail: nil,
             status: .inProgress,
             owner: peer.name,
-            context: .init(sessionID: "\(agent.id.uuidString)::main", senderMemberID: agent.id.uuidString)
+            context: .init(sessionID: "\(agent.id)::main", senderMemberID: agent.id)
         )
 
         XCTAssertEqual(updated.status, .inProgress)
@@ -677,21 +677,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             ],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.busy.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.busy.rawValue,
                     pendingPlanRequestID: nil
@@ -706,7 +706,7 @@ final class TeamRuntimePersistenceTests: XCTestCase {
         coordinator.reload()
 
         let finished = try coordinator.test_finishMember(
-            memberID: agent.id.uuidString,
+            memberID: agent.id,
             status: .idle,
             result: "Done.",
             error: nil
@@ -771,21 +771,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             ],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.busy.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
@@ -800,7 +800,7 @@ final class TeamRuntimePersistenceTests: XCTestCase {
         coordinator.reload()
 
         let finished = try coordinator.test_finishMember(
-            memberID: agent.id.uuidString,
+            memberID: agent.id,
             status: .failed,
             result: nil,
             error: "boom"
@@ -866,21 +866,21 @@ final class TeamRuntimePersistenceTests: XCTestCase {
             ],
             members: [
                 TeamManifestMember(
-                    agentId: agent.id.uuidString,
+                    agentId: agent.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(agent.id.uuidString)::main",
+                    sessionId: "\(agent.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil
                 ),
                 TeamManifestMember(
-                    agentId: peer.id.uuidString,
+                    agentId: peer.id,
                     agentType: SubAgentRegistry.generalPurpose.agentType,
                     input: nil,
                     planModeRequired: false,
-                    sessionId: "\(peer.id.uuidString)::main",
+                    sessionId: "\(peer.id)::main",
                     mode: nil,
                     lastStatus: TeamSwarmCoordinator.MemberStatus.idle.rawValue,
                     pendingPlanRequestID: nil

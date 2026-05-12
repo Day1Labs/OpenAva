@@ -140,8 +140,8 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let unavailableModelID = UUID()
-        let availableModelID = UUID()
+        let unavailableModelID = OpenAvaID.generate(.model)
+        let availableModelID = OpenAvaID.generate(.model)
         let config = AppConfig(
             session: .init(defaultSessionKey: "main"),
             llmCollection: .init(models: [
@@ -174,7 +174,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
                 id: nil,
                 name: "Agent",
                 emoji: "🤖",
-                selectedLLMModelID: nil,
+                selectedModelID: nil,
                 thinkingStrength: .medium,
                 workspaceRootURL: nil,
                 supportRootURL: nil
@@ -299,7 +299,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
         let projectObject = try XCTUnwrap(JSONSerialization.jsonObject(with: projectData) as? [String: Any])
         let teams = try XCTUnwrap(projectObject["teams"] as? [[String: Any]])
         let storedTeam = try XCTUnwrap(teams.first)
-        XCTAssertEqual(storedTeam["id"] as? String, team.id.uuidString)
+        XCTAssertEqual(storedTeam["id"] as? String, team.id)
         XCTAssertNil(storedTeam["name"])
         XCTAssertNil(storedTeam["emoji"])
         XCTAssertNil(storedTeam["agentPoolIDs"])
@@ -397,7 +397,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
             fileManager: .default,
             agentWorkspaceRootURL: workspaceRootURL
         )
-        let modelID = UUID()
+        let modelID = OpenAvaID.generate(.model)
 
         XCTAssertEqual(containerStore.activeSessionContext, .allAgentsTeam)
         containerStore.selectLLMModel(id: modelID)
@@ -412,7 +412,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
         let metadataURL = workspaceRootURL
             .appendingPathComponent(".openava", isDirectory: true)
             .appendingPathComponent("teams", isDirectory: true)
-            .appendingPathComponent(TeamStore.allAgentsTeamID.uuidString, isDirectory: true)
+            .appendingPathComponent(TeamStore.allAgentsTeamID, isDirectory: true)
             .appendingPathComponent("metadata.json", isDirectory: false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: metadataURL.path))
     }
@@ -434,7 +434,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
         let agent = try containerStore.createAgent(name: "Operator", emoji: "🛠️")
 
         _ = containerStore.setActiveSessionContext(.agent(agent.id))
-        XCTAssertEqual(containerStore.container.config.agent.id, agent.id.uuidString)
+        XCTAssertEqual(containerStore.container.config.agent.id, agent.id)
         XCTAssertEqual(
             containerStore.container.config.agent.workspaceRootURL?.standardizedFileURL,
             agent.workspaceURL.standardizedFileURL
@@ -463,7 +463,7 @@ final class AppContainerStoreAgentTeamTests: XCTestCase {
             workspaceRootURL
                 .appendingPathComponent(".openava", isDirectory: true)
                 .appendingPathComponent("teams", isDirectory: true)
-                .appendingPathComponent(TeamStore.allAgentsTeamID.uuidString, isDirectory: true)
+                .appendingPathComponent(TeamStore.allAgentsTeamID, isDirectory: true)
                 .standardizedFileURL
         )
         XCTAssertNotEqual(

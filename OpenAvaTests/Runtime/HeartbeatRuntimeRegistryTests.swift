@@ -71,7 +71,7 @@ final class HeartbeatRuntimeRegistryTests: XCTestCase {
     private func makeConfiguration(agentID: String) -> HeartbeatRuntimeConfiguration {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let profile = AgentProfile(
-            id: UUID(),
+            id: OpenAvaID.generate(.agent),
             name: agentID,
             emoji: "🫀",
             workspacePath: root.appendingPathComponent("workspace", isDirectory: true).path,

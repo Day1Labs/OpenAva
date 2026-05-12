@@ -49,10 +49,10 @@ final class TeamRoomOrchestratorTests: XCTestCase {
 
         XCTAssertEqual(message.role, .assistant)
         XCTAssertEqual(message.textContent, "Agent-authored response")
-        XCTAssertEqual(message.metadata["agentID"], agent.id.uuidString)
+        XCTAssertEqual(message.metadata["agentID"], agent.id)
         XCTAssertEqual(message.metadata["agentName"], "Reviewer")
         XCTAssertEqual(message.metadata["agentEmoji"], "🧪")
-        XCTAssertEqual(message.metadata["teamID"], team.id.uuidString)
+        XCTAssertEqual(message.metadata["teamID"], team.id)
         XCTAssertEqual(message.metadata["teamRoomTurnID"], "turn-123")
         XCTAssertEqual(message.metadata[ConversationSession.PromptInput.sourceMetadataKey], "team_room_agent_reply")
 
@@ -85,7 +85,7 @@ final class TeamRoomOrchestratorTests: XCTestCase {
             source: "team_room_agent_tool_result"
         )
 
-        XCTAssertEqual(toolMessage.metadata["agentID"], agent.id.uuidString)
+        XCTAssertEqual(toolMessage.metadata["agentID"], agent.id)
         XCTAssertEqual(toolMessage.metadata["agentName"], "Builder")
         XCTAssertEqual(toolMessage.metadata["teamRoomTurnID"], "turn-tool")
         XCTAssertEqual(toolMessage.metadata["teamRoomContext"], "globalTeam")

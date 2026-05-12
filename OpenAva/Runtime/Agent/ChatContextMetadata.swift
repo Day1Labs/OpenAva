@@ -3,9 +3,9 @@ import Foundation
 struct ChatContextMetadata: Codable, Equatable {
     static let fileName = "metadata.json"
 
-    var selectedModelID: UUID?
+    var selectedModelID: String?
     var thinkingStrength: ChatThinkingStrength
-    var agentPoolIDs: [UUID]
+    var agentPoolIDs: [String]
     var createdAt: Date
     var updatedAt: Date
     var autoCompactEnabled: Bool
@@ -14,9 +14,9 @@ struct ChatContextMetadata: Codable, Equatable {
     var avatarSeed: String?
 
     init(
-        selectedModelID: UUID?,
+        selectedModelID: String?,
         thinkingStrength: ChatThinkingStrength = .medium,
-        agentPoolIDs: [UUID] = [],
+        agentPoolIDs: [String] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         autoCompactEnabled: Bool = true,
@@ -37,9 +37,9 @@ struct ChatContextMetadata: Codable, Equatable {
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        selectedModelID = try container.decodeIfPresent(UUID.self, forKey: .selectedModelID)
+        selectedModelID = try container.decodeIfPresent(String.self, forKey: .selectedModelID)
         thinkingStrength = try container.decode(ChatThinkingStrength.self, forKey: .thinkingStrength)
-        agentPoolIDs = try container.decode([UUID].self, forKey: .agentPoolIDs)
+        agentPoolIDs = try container.decode([String].self, forKey: .agentPoolIDs)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         autoCompactEnabled = try container.decode(Bool.self, forKey: .autoCompactEnabled)

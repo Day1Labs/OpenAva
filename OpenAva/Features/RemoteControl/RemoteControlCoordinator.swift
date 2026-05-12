@@ -15,14 +15,14 @@ final class RemoteControlCoordinator {
 
     func listAgents() -> LocalControlListAgentsPayload {
         let agents = containerStore?.agents ?? []
-        let activeID = containerStore?.activeAgent?.id.uuidString
+        let activeID = containerStore?.activeAgent?.id
         return .init(
             agents: agents.map { agent in
                 .init(
-                    id: agent.id.uuidString,
+                    id: agent.id,
                     name: agent.name,
                     emoji: agent.emoji,
-                    isActive: agent.id.uuidString == activeID
+                    isActive: agent.id == activeID
                 )
             },
             activeAgentID: activeID
@@ -30,8 +30,7 @@ final class RemoteControlCoordinator {
     }
 
     func selectAgent(id rawID: String) -> LocalControlSelectAgentPayload? {
-        guard let uuid = UUID(uuidString: rawID),
-              containerStore?.setActiveAgent(uuid) == true
+        guard containerStore?.setActiveAgent(rawID) == true
         else {
             return nil
         }

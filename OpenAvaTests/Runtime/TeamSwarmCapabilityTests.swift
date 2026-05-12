@@ -126,7 +126,7 @@ final class TeamSwarmCapabilityTests: XCTestCase {
         coordinator.configure(workspaceRootURL: workspaceRootURL)
         coordinator.reload()
 
-        let snapshot = coordinator.snapshot(context: .init(sessionID: "\(agent.id.uuidString)::main"))
+        let snapshot = coordinator.snapshot(context: .init(sessionID: "\(agent.id)::main"))
 
         XCTAssertNil(snapshot)
     }
@@ -157,9 +157,9 @@ final class TeamSwarmCapabilityTests: XCTestCase {
         coordinator.configure(workspaceRootURL: workspaceRootURL)
         coordinator.reload()
 
-        let snapshot = try XCTUnwrap(coordinator.snapshot(context: .init(sessionID: "\(first.id.uuidString)::main")))
+        let snapshot = try XCTUnwrap(coordinator.snapshot(context: .init(sessionID: "\(first.id)::main")))
 
-        XCTAssertEqual(Set(snapshot.team.members.map(\.id)), Set([first.id.uuidString, second.id.uuidString]))
+        XCTAssertEqual(Set(snapshot.team.members.map(\.id)), Set([first.id, second.id]))
     }
 
     @MainActor
@@ -201,8 +201,8 @@ final class TeamSwarmCapabilityTests: XCTestCase {
                 workspaceRootURL: workspaceRootURL,
                 teamToolContextProvider: {
                     TeamSwarmCoordinator.ToolContext(
-                        sessionID: "\(first.id.uuidString)::main",
-                        senderMemberID: first.id.uuidString
+                        sessionID: "\(first.id)::main",
+                        senderMemberID: first.id
                     )
                 }
             )

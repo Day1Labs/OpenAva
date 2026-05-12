@@ -12,29 +12,29 @@ struct TeamProfile: Codable, Equatable, Identifiable {
         case id
     }
 
-    var id: UUID
+    var id: String
     var name: String
     var emoji: String
     var description: String?
-    var agentPoolIDs: [UUID]
+    var agentPoolIDs: [String]
     var defaultTopology: TeamTopologyKind
     var createdAt: Date
     var updatedAt: Date
-    var selectedModelID: UUID?
+    var selectedModelID: String?
     var thinkingStrength: ChatThinkingStrength
     var autoCompactEnabled: Bool
     var identityDocument: String?
 
     init(
-        id: UUID = UUID(),
+        id: String = OpenAvaID.generate(.team),
         name: String,
         emoji: String = "👥",
         description: String? = nil,
-        agentPoolIDs: [UUID],
+        agentPoolIDs: [String],
         defaultTopology: TeamTopologyKind = .automatic,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        selectedModelID: UUID? = nil,
+        selectedModelID: String? = nil,
         thinkingStrength: ChatThinkingStrength = .medium,
         autoCompactEnabled: Bool = true,
         identityDocument: String? = nil
@@ -56,7 +56,7 @@ struct TeamProfile: Codable, Equatable, Identifiable {
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
+        id = try container.decode(String.self, forKey: .id)
         name = ""
         emoji = "👥"
         description = nil

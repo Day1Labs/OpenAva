@@ -2,29 +2,29 @@ import Foundation
 
 struct TeamExecutionPlan: Codable, Equatable, Identifiable {
     struct Node: Codable, Equatable, Identifiable {
-        var id: UUID {
+        var id: String {
             agentID
         }
 
-        let agentID: UUID
+        let agentID: String
         let role: String?
 
-        init(agentID: UUID, role: String? = nil) {
+        init(agentID: String, role: String? = nil) {
             self.agentID = agentID
             self.role = role?.trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
 
     struct Edge: Codable, Equatable, Identifiable {
-        let id: UUID
-        let fromAgentID: UUID
-        let toAgentID: UUID
+        let id: String
+        let fromAgentID: String
+        let toAgentID: String
         let relationship: String
 
         init(
-            id: UUID = UUID(),
-            fromAgentID: UUID,
-            toAgentID: UUID,
+            id: String = UUID().uuidString,
+            fromAgentID: String,
+            toAgentID: String,
             relationship: String
         ) {
             self.id = id
@@ -34,16 +34,16 @@ struct TeamExecutionPlan: Codable, Equatable, Identifiable {
         }
     }
 
-    let id: UUID
-    let teamID: UUID
+    let id: String
+    let teamID: String
     let topology: TeamTopologyKind
     let nodes: [Node]
     let edges: [Edge]
     let createdAt: Date
 
     init(
-        id: UUID = UUID(),
-        teamID: UUID,
+        id: String = UUID().uuidString,
+        teamID: String,
         topology: TeamTopologyKind,
         nodes: [Node],
         edges: [Edge],

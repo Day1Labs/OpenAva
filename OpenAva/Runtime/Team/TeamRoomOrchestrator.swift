@@ -183,7 +183,7 @@ final class TeamRoomOrchestrator {
         turnID: String?,
         source: String
     ) {
-        message.metadata["agentID"] = agent.id.uuidString
+        message.metadata["agentID"] = agent.id
         message.metadata["agentName"] = agent.name
         message.metadata["agentEmoji"] = agent.emoji
         message.metadata["agentAvatarKind"] = agent.avatarKind.rawValue
@@ -201,7 +201,7 @@ final class TeamRoomOrchestrator {
             message.metadata["teamRoomTurnID"] = turnID
         }
         if case let .team(teamID) = context.activeContext {
-            message.metadata["teamID"] = teamID.uuidString
+            message.metadata["teamID"] = teamID
             if let team = context.teams.first(where: { $0.id == teamID }) {
                 message.metadata["teamName"] = team.name
             }
@@ -363,7 +363,7 @@ final class TeamRoomOrchestrator {
             let didProduceAssistant = roomSession.messages.contains { message in
                 message.role == .assistant
                     && !existingMessageIDs.contains(message.id)
-                    && message.metadata["agentID"] == agent.id.uuidString
+                    && message.metadata["agentID"] == agent.id
                     && message.metadata["teamRoomTurnID"] == turnID
             }
 
@@ -451,11 +451,11 @@ final class TeamRoomOrchestrator {
     ) -> String {
         switch context.activeContext {
         case .allAgentsTeam:
-            return "agent:\(agent.id.uuidString):team:\(TeamStore.allAgentsTeamID.uuidString)::\(roomSessionID)"
+            return "agent:\(agent.id):team:\(TeamStore.allAgentsTeamID)::\(roomSessionID)"
         case let .team(teamID):
-            return "agent:\(agent.id.uuidString):team:\(teamID.uuidString)::\(roomSessionID)"
+            return "agent:\(agent.id):team:\(teamID)::\(roomSessionID)"
         case .agent:
-            return "agent:\(agent.id.uuidString)::\(roomSessionID)"
+            return "agent:\(agent.id)::\(roomSessionID)"
         }
     }
 
@@ -644,7 +644,7 @@ final class TeamRoomOrchestrator {
         metadata["teamRoomTurnID"] = turnID
         metadata["teamRoomContext"] = metadataContextValue(context.activeContext)
         if case let .team(teamID) = context.activeContext {
-            metadata["teamID"] = teamID.uuidString
+            metadata["teamID"] = teamID
             if let team = context.teams.first(where: { $0.id == teamID }) {
                 metadata["teamName"] = team.name
             }
@@ -682,7 +682,7 @@ final class TeamRoomOrchestrator {
             message.metadata[ConversationSession.PromptInput.sourceMetadataKey] = "team_room_system_event"
             message.metadata["teamRoomContext"] = metadataContextValue(context.activeContext)
             if case let .team(teamID) = context.activeContext {
-                message.metadata["teamID"] = teamID.uuidString
+                message.metadata["teamID"] = teamID
             }
         }
         roomSession.recordMessageInTranscript(message)
@@ -694,9 +694,9 @@ final class TeamRoomOrchestrator {
         case .allAgentsTeam:
             "globalTeam"
         case let .team(teamID):
-            "team:\(teamID.uuidString)"
+            "team:\(teamID)"
         case let .agent(agentID):
-            "agent:\(agentID.uuidString)"
+            "agent:\(agentID)"
         }
     }
 }

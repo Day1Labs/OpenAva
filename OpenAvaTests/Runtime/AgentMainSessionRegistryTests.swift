@@ -26,7 +26,7 @@ final class AgentMainSessionRegistryTests: XCTestCase {
         let resources = AgentMainSessionRegistry.shared.sessionResources(
             for: agent,
             modelConfig: makeModelConfig(),
-            invocationSessionID: "\(agent.id.uuidString)::review-session",
+            invocationSessionID: "\(agent.id)::review-session",
             shouldExtractDurableMemory: false
         )
 
@@ -50,13 +50,13 @@ final class AgentMainSessionRegistryTests: XCTestCase {
         let firstResources = AgentMainSessionRegistry.shared.sessionResources(
             for: agent,
             modelConfig: modelConfig,
-            invocationSessionID: "\(agent.id.uuidString)::main",
+            invocationSessionID: "\(agent.id)::main",
             shouldExtractDurableMemory: false
         )
         let secondResources = AgentMainSessionRegistry.shared.sessionResources(
             for: agent,
             modelConfig: modelConfig,
-            invocationSessionID: "\(agent.id.uuidString)::team-review",
+            invocationSessionID: "\(agent.id)::team-review",
             shouldExtractDurableMemory: false
         )
 
@@ -80,7 +80,7 @@ final class AgentMainSessionRegistryTests: XCTestCase {
 
         let modelConfig = makeModelConfig()
         let recorder = EventRecorder()
-        let invocationSessionID = "\(agent.id.uuidString)::main"
+        let invocationSessionID = "\(agent.id)::main"
 
         let first = Task {
             try await AgentMainSessionRegistry.shared.submitToMainSession(

@@ -15,8 +15,8 @@ final class AgentMainSessionRegistry {
     }
 
     private struct CacheKey: Hashable {
-        let agentID: UUID
-        let modelID: UUID?
+        let agentID: String
+        let modelID: String?
         let modelName: String
         let providerName: String
         let thinkingStrength: ChatThinkingStrength
@@ -70,7 +70,7 @@ final class AgentMainSessionRegistry {
         }
     }
 
-    private var entriesByAgentID: [UUID: CachedEntry] = [:]
+    private var entriesByAgentID: [String: CachedEntry] = [:]
     private var executorsByKey: [CacheKey: MainSessionExecutor] = [:]
 
     private init() {}
@@ -199,7 +199,7 @@ final class AgentMainSessionRegistry {
         return resources
     }
 
-    func remove(agentID: UUID) {
+    func remove(agentID: String) {
         entriesByAgentID.removeValue(forKey: agentID)
         executorsByKey = executorsByKey.filter { $0.key.agentID != agentID }
     }

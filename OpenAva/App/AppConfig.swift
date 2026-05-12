@@ -9,7 +9,7 @@ struct AppConfig {
         var id: String?
         var name: String
         var emoji: String
-        var selectedLLMModelID: UUID?
+        var selectedModelID: String?
         var thinkingStrength: ChatThinkingStrength
         var workspaceRootURL: URL?
         var supportRootURL: URL?
@@ -19,7 +19,7 @@ struct AppConfig {
 
     /// Individual LLM model configuration
     struct LLMModel: Identifiable, Codable, Equatable {
-        let id: UUID
+        let id: String
         var name: String
         var endpoint: URL?
         var apiKey: String?
@@ -44,7 +44,7 @@ struct AppConfig {
         }
 
         init(
-            id: UUID = UUID(),
+            id: String = OpenAvaID.generate(.model),
             name: String,
             endpoint: URL?,
             apiKey: String?,
@@ -80,7 +80,7 @@ struct AppConfig {
     struct LLMCollection {
         var models: [LLMModel]
 
-        func selectedModel(preferredID: UUID?) -> LLMModel? {
+        func selectedModel(preferredID: String?) -> LLMModel? {
             if let preferredID,
                let matchedModel = models.first(where: { $0.id == preferredID && $0.isConfigured })
             {
@@ -89,7 +89,7 @@ struct AppConfig {
             return models.first(where: \.isConfigured)
         }
 
-        func isConfigured(preferredID: UUID?) -> Bool {
+        func isConfigured(preferredID: String?) -> Bool {
             selectedModel(preferredID: preferredID)?.isConfigured ?? false
         }
 
@@ -103,13 +103,13 @@ struct AppConfig {
     var agent: Agent
 
     /// Selected model id resolved from the active agent preference and model list.
-    var selectedLLMModelID: UUID? {
-        llmCollection.selectedModel(preferredID: agent.selectedLLMModelID)?.id
+    var selectedModelID: String? {
+        llmCollection.selectedModel(preferredID: agent.selectedModelID)?.id
     }
 
     /// Expose the selected model directly so runtime code can use the latest config shape.
-    var selectedLLMModel: LLMModel? {
-        llmCollection.selectedModel(preferredID: agent.selectedLLMModelID)
+    var selectedModel: LLMModel? {
+        llmCollection.selectedModel(preferredID: agent.selectedModelID)
     }
 
     static func makeDefault() -> AppConfig {
@@ -137,7 +137,7 @@ struct AppConfig {
                 id: nil,
                 name: "Agent",
                 emoji: "🤖",
-                selectedLLMModelID: nil,
+                selectedModelID: nil,
                 thinkingStrength: .medium,
                 workspaceRootURL: nil,
                 supportRootURL: nil

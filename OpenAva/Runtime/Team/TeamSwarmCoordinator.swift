@@ -745,7 +745,7 @@ final class TeamSwarmCoordinator {
             agent: activeAgent,
             modelConfig: modelConfig,
             agentCount: max(state.agents.count, 1),
-            invocationSessionID: "\(activeAgent.id.uuidString)::\(mainSessionID)"
+            invocationSessionID: "\(activeAgent.id)::\(mainSessionID)"
         )
     }
 
@@ -832,8 +832,7 @@ final class TeamSwarmCoordinator {
     }
 
     private func agentProfile(for member: TeamMember) throws -> AgentProfile {
-        guard let memberUUID = UUID(uuidString: member.id),
-              let agent = loadAgentState().agents.first(where: { $0.id == memberUUID })
+        guard let agent = loadAgentState().agents.first(where: { $0.id == member.id })
         else {
             throw TeamError("TEAMMATE_AGENT_NOT_FOUND: \(member.name)")
         }
@@ -1235,11 +1234,11 @@ final class TeamSwarmCoordinator {
 
     private func implicitTeamRecord(
         persisted: TeamManifest?,
-        agentByID: [UUID: AgentProfile]
+        agentByID: [String: AgentProfile]
     ) -> TeamRecord? {
         let agents = agentByID.values.sorted { lhs, rhs in
             if lhs.createdAtMs == rhs.createdAtMs {
-                return lhs.id.uuidString < rhs.id.uuidString
+                return lhs.id < rhs.id
             }
             return lhs.createdAtMs < rhs.createdAtMs
         }
@@ -1248,12 +1247,12 @@ final class TeamSwarmCoordinator {
         }
 
         let members = agents.map { agent -> TeamMember in
-            let persistedMember = persisted?.members.first(where: { $0.agentId == agent.id.uuidString })
+            let persistedMember = persisted?.members.first(where: { $0.agentId == agent.id })
             return TeamMember(
-                id: agent.id.uuidString,
+                id: agent.id,
                 name: agent.name,
                 agentType: persistedMember?.agentType ?? SubAgentRegistry.generalPurpose.agentType,
-                sessionID: persistedMember?.sessionId ?? teammateInvocationSessionID(memberID: agent.id.uuidString),
+                sessionID: persistedMember?.sessionId ?? teammateInvocationSessionID(memberID: agent.id),
                 planModeRequired: persistedMember?.planModeRequired ?? false,
                 permissionMode: persistedMember?.mode,
                 status: MemberStatus(rawValue: persistedMember?.lastStatus ?? "stopped") ?? .stopped,

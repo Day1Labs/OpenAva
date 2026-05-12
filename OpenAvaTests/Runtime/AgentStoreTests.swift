@@ -24,7 +24,7 @@ final class AgentStoreTests: XCTestCase {
             workspaceRootURL
                 .appendingPathComponent(".openava", isDirectory: true)
                 .appendingPathComponent("agents", isDirectory: true)
-                .appendingPathComponent(profile.id.uuidString, isDirectory: true)
+                .appendingPathComponent(profile.id, isDirectory: true)
                 .path
         )
         XCTAssertTrue(fileManager.fileExists(atPath: profile.workspaceURL.path))
@@ -37,7 +37,7 @@ final class AgentStoreTests: XCTestCase {
 
         let projectURL = try XCTUnwrap(OpenAvaProjectFile.fileURL(workspaceRootURL: workspaceRootURL))
         let projectText = try String(contentsOf: projectURL, encoding: .utf8)
-        XCTAssertTrue(projectText.contains(profile.id.uuidString))
+        XCTAssertTrue(projectText.contains(profile.id))
         XCTAssertTrue(projectText.contains("\"activeAgentID\""))
         XCTAssertFalse(projectText.contains("\"agents\""))
     }
@@ -82,7 +82,7 @@ final class AgentStoreTests: XCTestCase {
             encoding: .utf8
         )
         XCTAssertTrue(identityText.contains("- **Avatar:**"))
-        XCTAssertTrue(identityText.contains("  .avatar"))
+        XCTAssertTrue(identityText.contains("  avatar.png"))
 
         let snapshot = AgentStore.load(workspaceRootURL: workspaceRootURL)
         XCTAssertEqual(snapshot.activeAgent?.avatarKind, .uploaded)
@@ -98,7 +98,7 @@ final class AgentStoreTests: XCTestCase {
             workspaceRootURL: workspaceRootURL
         )
 
-        let modelID = UUID()
+        let modelID = OpenAvaID.generate(.model)
         XCTAssertTrue(AgentStore.setSelectedModel(modelID, for: profile.id, workspaceRootURL: workspaceRootURL))
 
         let snapshot = AgentStore.load(workspaceRootURL: workspaceRootURL)
@@ -303,7 +303,7 @@ final class AgentStoreTests: XCTestCase {
 
         let staleProjectPayload = """
         {
-          "activeAgentID" : "\(UUID().uuidString)"
+          "activeAgentID" : "\(OpenAvaID.generate(.agent))"
         }
         """
         let projectURL = try XCTUnwrap(OpenAvaProjectFile.fileURL(workspaceRootURL: workspaceRootURL))
@@ -321,7 +321,7 @@ final class AgentStoreTests: XCTestCase {
         let workspaceRootURL = makeTemporaryWorkspaceRoot()
         defer { try? FileManager.default.removeItem(at: workspaceRootURL) }
 
-        let agentID = UUID()
+        let agentID = OpenAvaID.generate(.agent)
         let agentDirectoryURL = AgentStore.agentContextDirectory(for: agentID, workspaceRootURL: workspaceRootURL)
         try AgentTemplateWriter.writeAgentFile(
             at: agentDirectoryURL,
@@ -345,7 +345,7 @@ final class AgentStoreTests: XCTestCase {
 
         let projectURL = try XCTUnwrap(OpenAvaProjectFile.fileURL(workspaceRootURL: workspaceRootURL))
         let projectText = try String(contentsOf: projectURL, encoding: .utf8)
-        XCTAssertTrue(projectText.contains(agentID.uuidString))
+        XCTAssertTrue(projectText.contains(agentID))
         XCTAssertFalse(projectText.contains("\"agents\""))
     }
 

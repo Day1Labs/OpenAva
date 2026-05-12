@@ -1,9 +1,45 @@
 import Foundation
 
-struct AgentProfile: Equatable, Identifiable {
-    static let avatarFileName = ".avatar"
+enum OpenAvaID {
+    enum Kind: String {
+        case agent
+        case model
+        case team
+    }
 
-    var id: UUID
+    private static let alphabet = Array("0123456789ABCDEFGHJKMNPQRSTVWXYZ")
+    private static let suffixLength = 26
+
+    static func generate(_ kind: Kind, date: Date = Date()) -> String {
+        "\(kind.rawValue)_\(timeComponent(for: date))\(randomComponent(length: 16))"
+    }
+
+    static func isValid(_ id: String, kind: Kind) -> Bool {
+        let prefix = "\(kind.rawValue)_"
+        guard id.hasPrefix(prefix) else { return false }
+        let suffix = String(id.dropFirst(prefix.count))
+        return suffix.count == suffixLength && suffix.allSatisfy { alphabet.contains($0) }
+    }
+
+    private static func timeComponent(for date: Date) -> String {
+        var value = UInt64(max(date.timeIntervalSince1970 * 1000, 0))
+        var characters = Array(repeating: alphabet[0], count: 10)
+        for index in stride(from: characters.count - 1, through: 0, by: -1) {
+            characters[index] = alphabet[Int(value % 32)]
+            value /= 32
+        }
+        return String(characters)
+    }
+
+    private static func randomComponent(length: Int) -> String {
+        String((0 ..< length).map { _ in alphabet[Int.random(in: alphabet.indices)] })
+    }
+}
+
+struct AgentProfile: Equatable, Identifiable {
+    static let avatarFileName = "avatar.png"
+
+    var id: String
     var name: String
     var emoji: String
     /// Shared project workspace used as the tool cwd.
@@ -11,7 +47,7 @@ struct AgentProfile: Equatable, Identifiable {
     /// Agent-owned context root under `<workspace>/.openava/agents/<id>`.
     var localContextPath: String
     /// Per-agent selected LLM model identifier.
-    var selectedModelID: UUID?
+    var selectedModelID: String?
     /// Per-agent reasoning/thinking strength preference.
     var thinkingStrength: ChatThinkingStrength
     /// Visual avatar source for UI surfaces.
@@ -75,12 +111,12 @@ struct AgentProfile: Equatable, Identifiable {
     }
 
     init(
-        id: UUID = UUID(),
+        id: String = OpenAvaID.generate(.agent),
         name: String,
         emoji: String,
         workspacePath: String,
         localContextPath: String,
-        selectedModelID: UUID? = nil,
+        selectedModelID: String? = nil,
         thinkingStrength: ChatThinkingStrength = .medium,
         avatarKind: AgentAvatarKind = .emoji,
         avatarSeed: String? = nil,
@@ -108,7 +144,7 @@ extension AgentProfile: Codable {
 
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(UUID.self, forKey: .id)
+        id = try c.decode(String.self, forKey: .id)
         name = ""
         emoji = "🤖"
         workspacePath = ""
@@ -129,7 +165,7 @@ extension AgentProfile: Codable {
 
 struct AgentStateSnapshot: Equatable {
     var agents: [AgentProfile]
-    var activeAgentID: UUID?
+    var activeAgentID: String?
 
     var activeAgent: AgentProfile? {
         guard let activeAgentID else { return nil }
@@ -154,13 +190,13 @@ struct OpenAvaProjectState: Codable {
         case toolPermissionRules
     }
 
-    var activeAgentID: UUID?
+    var activeAgentID: String?
     var user: OpenAvaUserDefaults?
     var teams: [TeamProfile]
     var toolPermissionRules: [ToolPermissionRule]
 
     init(
-        activeAgentID: UUID? = nil,
+        activeAgentID: String? = nil,
         user: OpenAvaUserDefaults? = nil,
         teams: [TeamProfile] = [],
         toolPermissionRules: [ToolPermissionRule] = []
@@ -173,7 +209,7 @@ struct OpenAvaProjectState: Codable {
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        activeAgentID = try container.decodeIfPresent(UUID.self, forKey: .activeAgentID)
+        activeAgentID = try container.decodeIfPresent(String.self, forKey: .activeAgentID)
         user = try container.decodeIfPresent(OpenAvaUserDefaults.self, forKey: .user)
         teams = try container.decodeIfPresent([TeamProfile].self, forKey: .teams) ?? []
         toolPermissionRules = try container.decodeIfPresent([ToolPermissionRule].self, forKey: .toolPermissionRules) ?? []
@@ -393,7 +429,7 @@ enum AgentStore {
     ) throws -> AgentProfile {
         let rootURL = try resolvedWorkspaceRootDirectory(fileManager: fileManager, workspaceRootURL: workspaceRootURL)
         var state = load(fileManager: fileManager, workspaceRootURL: rootURL)
-        let agentID = UUID()
+        let agentID = OpenAvaID.generate(.agent)
         let normalizedAgentName = normalizedName(name)
         let workspaceURL = rootURL
         let contextURL = agentContextDirectory(for: agentID, workspaceRootURL: rootURL)
@@ -428,7 +464,7 @@ enum AgentStore {
     }
 
     static func updateAgent(
-        agentID: UUID,
+        agentID: String,
         name: String,
         emoji: String,
         fileManager: FileManager = .default,
@@ -455,7 +491,7 @@ enum AgentStore {
     }
 
     static func renameAgent(
-        agentID: UUID,
+        agentID: String,
         name: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
@@ -493,7 +529,7 @@ enum AgentStore {
 
     @discardableResult
     static func setActiveAgent(
-        _ agentID: UUID,
+        _ agentID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> Bool {
@@ -509,7 +545,7 @@ enum AgentStore {
 
     @discardableResult
     static func deleteAgent(
-        _ agentID: UUID,
+        _ agentID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> Bool {
@@ -538,8 +574,8 @@ enum AgentStore {
 
     @discardableResult
     static func setSelectedModel(
-        _ selectedModelID: UUID?,
-        for agentID: UUID,
+        _ selectedModelID: String?,
+        for agentID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> Bool {
@@ -556,7 +592,7 @@ enum AgentStore {
     @discardableResult
     static func setThinkingStrength(
         _ thinkingStrength: ChatThinkingStrength,
-        for agentID: UUID,
+        for agentID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> Bool {
@@ -573,7 +609,7 @@ enum AgentStore {
     @discardableResult
     static func setAutoCompact(
         _ enabled: Bool,
-        for agentID: UUID,
+        for agentID: String,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) -> Bool {
@@ -589,8 +625,8 @@ enum AgentStore {
 
     /// Repair per-agent selections after a model is deleted.
     static func repairSelectedModel(
-        afterDeleting deletedModelID: UUID,
-        replacement: UUID?,
+        afterDeleting deletedModelID: String,
+        replacement: String?,
         fileManager: FileManager = .default,
         workspaceRootURL: URL? = nil
     ) {
@@ -643,12 +679,12 @@ enum AgentStore {
             .appendingPathComponent(agentsDirectoryName, isDirectory: true)
     }
 
-    static func agentContextDirectory(for agentID: UUID, workspaceRootURL: URL) -> URL {
+    static func agentContextDirectory(for agentID: String, workspaceRootURL: URL) -> URL {
         agentsRootDirectory(workspaceRootURL: workspaceRootURL)
-            .appendingPathComponent(agentID.uuidString, isDirectory: true)
+            .appendingPathComponent(agentID, isDirectory: true)
     }
 
-    private static func loadAgentMetadata(agentID: UUID, workspaceRootURL: URL) -> ChatContextMetadata? {
+    private static func loadAgentMetadata(agentID: String, workspaceRootURL: URL) -> ChatContextMetadata? {
         ChatContextMetadata.load(from: agentContextDirectory(for: agentID, workspaceRootURL: workspaceRootURL))
     }
 
@@ -681,10 +717,11 @@ enum AgentStore {
         return directoryURLs.compactMap { directoryURL -> AgentProfile? in
             let resourceValues = try? directoryURL.resourceValues(forKeys: [.isDirectoryKey])
             guard resourceValues?.isDirectory == true,
-                  let agentID = UUID(uuidString: directoryURL.lastPathComponent)
+                  OpenAvaID.isValid(directoryURL.lastPathComponent, kind: .agent)
             else {
                 return nil
             }
+            let agentID = directoryURL.lastPathComponent
 
             let identityURL = directoryURL.appendingPathComponent(AgentContextDocumentKind.identity.fileName, isDirectory: false)
             guard let agentMetadata = loadAgentMetadata(agentID: agentID, workspaceRootURL: workspaceRootURL),

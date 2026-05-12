@@ -4,8 +4,8 @@ import Observation
 
 enum ActiveSessionContext: Equatable {
     case allAgentsTeam
-    case team(UUID)
-    case agent(UUID)
+    case team(String)
+    case agent(String)
 }
 
 @MainActor
@@ -170,9 +170,9 @@ final class AppContainerStore {
     }
 
     /// Select a specific model from the collection.
-    func selectLLMModel(id: UUID) {
+    func selectLLMModel(id: String) {
         var config = container.config
-        config.agent.selectedLLMModelID = id
+        config.agent.selectedModelID = id
 
         if let activeAgentID = activeAgent?.id {
             _ = AgentStore.setSelectedModel(
@@ -230,7 +230,7 @@ final class AppContainerStore {
     }
 
     /// Delete a model from the collection.
-    func deleteLLMModel(id: UUID) {
+    func deleteLLMModel(id: String) {
         LLMConfigStore.deleteModel(id: id)
 
         // Reload collection and update container.
@@ -279,7 +279,7 @@ final class AppContainerStore {
         )
         // Seed new agent with the current model and thinking strength as its initial preferences.
         _ = AgentStore.setSelectedModel(
-            container.config.selectedLLMModelID,
+            container.config.selectedModelID,
             for: profile.id,
             fileManager: fileManager,
             workspaceRootURL: agentWorkspaceRootURL
@@ -332,7 +332,7 @@ final class AppContainerStore {
                     vibe: preset.agentVibe
                 )
                 _ = AgentStore.setSelectedModel(
-                    container.config.selectedLLMModelID,
+                    container.config.selectedModelID,
                     for: profile.id,
                     fileManager: fileManager,
                     workspaceRootURL: agentWorkspaceRootURL
@@ -371,7 +371,7 @@ final class AppContainerStore {
         name: String,
         emoji: String = "👥",
         description: String? = nil,
-        agentIDs: [UUID] = [],
+        agentIDs: [String] = [],
         defaultTopology: TeamTopologyKind = .automatic
     ) -> TeamProfile? {
         let team = TeamStore.createTeam(
@@ -399,7 +399,7 @@ final class AppContainerStore {
     }
 
     @discardableResult
-    func updateTeam(_ teamID: UUID, name: String, emoji: String, description: String?) -> TeamProfile? {
+    func updateTeam(_ teamID: String, name: String, emoji: String, description: String?) -> TeamProfile? {
         let team = TeamStore.updateTeam(teamID, name: name, emoji: emoji, description: description, fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
         if team != nil {
             reloadTeamState()
@@ -409,7 +409,7 @@ final class AppContainerStore {
 
     @discardableResult
     func renameActiveTeam(to name: String) -> Bool {
-        let teamID: UUID
+        let teamID: String
         switch activeSessionContext {
         case .allAgentsTeam:
             teamID = TeamStore.allAgentsTeamID
@@ -433,7 +433,7 @@ final class AppContainerStore {
     }
 
     @discardableResult
-    func addAgents(_ agentIDs: [UUID], toTeam teamID: UUID) -> TeamProfile? {
+    func addAgents(_ agentIDs: [String], toTeam teamID: String) -> TeamProfile? {
         let team = TeamStore.addAgents(agentIDs, to: teamID, fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
         if team != nil {
             reloadTeamState()
@@ -442,7 +442,7 @@ final class AppContainerStore {
     }
 
     @discardableResult
-    func removeAgent(_ agentID: UUID, fromTeam teamID: UUID) -> TeamProfile? {
+    func removeAgent(_ agentID: String, fromTeam teamID: String) -> TeamProfile? {
         let team = TeamStore.removeAgent(agentID, from: teamID, fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
         if team != nil {
             reloadTeamState()
@@ -450,7 +450,7 @@ final class AppContainerStore {
         return team
     }
 
-    func deleteTeam(_ teamID: UUID) {
+    func deleteTeam(_ teamID: String) {
         TeamStore.deleteTeam(teamID, fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
         reloadTeamState()
     }
@@ -467,7 +467,7 @@ final class AppContainerStore {
     }
 
     @discardableResult
-    func setActiveAgent(_ agentID: UUID) -> Bool {
+    func setActiveAgent(_ agentID: String) -> Bool {
         return setActiveSessionContext(.agent(agentID))
     }
 
@@ -497,7 +497,7 @@ final class AppContainerStore {
     }
 
     @discardableResult
-    func deleteAgent(_ agentID: UUID) -> Bool {
+    func deleteAgent(_ agentID: String) -> Bool {
         let changed = AgentStore.deleteAgent(agentID, fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
         if changed {
             TeamStore.removeAgentReferences(agentID, fileManager: fileManager, workspaceRootURL: agentWorkspaceRootURL)
@@ -629,21 +629,21 @@ final class AppContainerStore {
         var config = baseConfig
 
         // Keep selected model id valid even before an active agent is resolved.
-        config.agent.selectedLLMModelID = Self.resolveSelectedModelID(
+        config.agent.selectedModelID = Self.resolveSelectedModelID(
             in: config.llmCollection,
-            preferredID: config.agent.selectedLLMModelID
+            preferredID: config.agent.selectedModelID
         )
 
         guard case .agent = activeSessionContext else {
             let selectedModelID = Self.resolveSelectedModelID(
                 in: config.llmCollection,
-                preferredID: teamMetadata?.selectedModelID ?? activeTeam?.selectedModelID ?? config.agent.selectedLLMModelID
+                preferredID: teamMetadata?.selectedModelID ?? activeTeam?.selectedModelID ?? config.agent.selectedModelID
             )
             config.agent = AppConfig.Agent(
                 id: nil,
                 name: "Agent",
                 emoji: "🤖",
-                selectedLLMModelID: selectedModelID,
+                selectedModelID: selectedModelID,
                 thinkingStrength: teamMetadata?.thinkingStrength ?? activeTeam?.thinkingStrength ?? config.agent.thinkingStrength,
                 workspaceRootURL: workspaceRootURL,
                 supportRootURL: supportRootURL(workspaceRootURL: workspaceRootURL)
@@ -656,7 +656,7 @@ final class AppContainerStore {
                 id: nil,
                 name: "Agent",
                 emoji: "🤖",
-                selectedLLMModelID: config.agent.selectedLLMModelID,
+                selectedModelID: config.agent.selectedModelID,
                 thinkingStrength: config.agent.thinkingStrength,
                 workspaceRootURL: workspaceRootURL,
                 supportRootURL: supportRootURL(workspaceRootURL: workspaceRootURL)
@@ -671,10 +671,10 @@ final class AppContainerStore {
         )
 
         config.agent = AppConfig.Agent(
-            id: activeAgent.id.uuidString,
+            id: activeAgent.id,
             name: activeAgent.name,
             emoji: activeAgent.emoji,
-            selectedLLMModelID: resolvedSelectedModelID,
+            selectedModelID: resolvedSelectedModelID,
             thinkingStrength: activeAgent.thinkingStrength,
             workspaceRootURL: activeAgent.workspaceURL,
             supportRootURL: activeAgent.contextURL
@@ -690,8 +690,8 @@ final class AppContainerStore {
 
     private static func resolveSelectedModelID(
         in collection: AppConfig.LLMCollection,
-        preferredID: UUID?
-    ) -> UUID? {
+        preferredID: String?
+    ) -> String? {
         if let preferredID,
            collection.models.contains(where: { $0.id == preferredID && $0.isConfigured })
         {

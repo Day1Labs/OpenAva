@@ -28,7 +28,7 @@ enum LLMConfigStore {
             models = decoded
         } else {
             models = defaultModels()
-            // Save models metadata to defaults directly to ensure stable UUIDs
+            // Save models metadata to defaults directly to ensure stable ids.
             if let data = try? JSONEncoder().encode(models) {
                 defaults.set(data, forKey: DefaultsKey.collection)
             }
@@ -56,7 +56,7 @@ enum LLMConfigStore {
         for provider in LLMProvider.allCases where provider != .custom {
             for option in provider.recommendedModels {
                 let model = AppConfig.LLMModel(
-                    id: UUID(),
+                    id: OpenAvaID.generate(.model),
                     name: option.displayName,
                     endpoint: URL(string: provider.defaultEndpoint),
                     apiKey: nil,
@@ -124,7 +124,7 @@ enum LLMConfigStore {
     }
 
     /// Delete a model from the collection.
-    static func deleteModel(id: UUID, defaults: UserDefaults = .standard) {
+    static func deleteModel(id: String, defaults: UserDefaults = .standard) {
         var collection = loadCollection(defaults: defaults)
         if let model = collection.models.first(where: { $0.id == id }) {
             collection.models.removeAll { $0.id == id }

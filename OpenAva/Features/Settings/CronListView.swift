@@ -190,8 +190,7 @@ struct CronListView: View {
 
     private func resolvedAgentName(for job: CronJobPayload) -> String? {
         guard let rawAgentID = AppConfig.nonEmpty(job.agentID),
-              let agentUUID = UUID(uuidString: rawAgentID),
-              let agent = containerStore.agents.first(where: { $0.id == agentUUID })
+              let agent = containerStore.agents.first(where: { $0.id == rawAgentID })
         else {
             return AppConfig.nonEmpty(job.agentID) == nil ? nil : L10n.tr("settings.cron.agent.unknown")
         }
@@ -492,7 +491,7 @@ private struct CronAddJobSheet: View {
                                 }
                                 ForEach(containerStore.agents, id: \.id) { agent in
                                     Text(agent.emoji.isEmpty ? agent.name : "\(agent.emoji) \(agent.name)")
-                                        .tag(agent.id.uuidString)
+                                        .tag(agent.id)
                                 }
                             } label: {
                                 EmptyView()
@@ -667,44 +666,13 @@ private struct CronAddJobSheet: View {
     }
 
     private var isFormValid: Bool {
-        let msg = message.trimmingCharacters(in: .whitespacesAndNewlines)
-        if msg.isEmpty { return false }
-        if jobKind == .heartbeat {
-            if selectedAgentID.isEmpty { return false }
-        }
-        if mode == .every, resolvedEveryMinutes == nil {
-            return false
-        }
-        return true
-    }
-
-    private func cancelSheet() {
-        onCancel?()
-        if presentationStyle == .modal {
-            dismiss()
-        }
+        !trimmedMessage.isEmpty
+            && (jobKind == .notify || resolvedSelectedAgentID != nil)
+            && (mode == .at || resolvedEveryMinutes != nil)
     }
 
     private var trimmedMessage: String {
         message.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var messagePlaceholder: String {
-        switch jobKind {
-        case .notify:
-            return L10n.tr("settings.cron.message.placeholder")
-        case .heartbeat:
-            return L10n.tr("settings.cron.message.placeholder.heartbeat")
-        }
-    }
-
-    private var canCreateJob: Bool {
-        switch jobKind {
-        case .notify:
-            return !trimmedMessage.isEmpty
-        case .heartbeat:
-            return resolvedSelectedAgentID != nil
-        }
     }
 
     private var resolvedSelectedAgentID: String? {
@@ -723,7 +691,7 @@ private struct CronAddJobSheet: View {
     private func ensureSelectedAgent() {
         if jobKind == .notify {
             if let selected = resolvedSelectedAgentID,
-               containerStore.agents.contains(where: { $0.id.uuidString == selected })
+               containerStore.agents.contains(where: { $0.id == selected })
             {
                 return
             }
@@ -731,18 +699,14 @@ private struct CronAddJobSheet: View {
             return
         }
         if let selected = resolvedSelectedAgentID,
-           containerStore.agents.contains(where: { $0.id.uuidString == selected })
+           containerStore.agents.contains(where: { $0.id == selected })
         {
             return
         }
 
-        selectedAgentID = containerStore.activeAgent?.id.uuidString
-            ?? containerStore.agents.first?.id.uuidString
+        selectedAgentID = containerStore.activeAgent?.id
+            ?? containerStore.agents.first?.id
             ?? ""
-    }
-
-    private func agentDisplayName(_ agent: AgentProfile) -> String {
-        agent.emoji.isEmpty ? agent.name : "\(agent.emoji) \(agent.name)"
     }
 
     private func makeDraft() -> CronCreateDraft {
