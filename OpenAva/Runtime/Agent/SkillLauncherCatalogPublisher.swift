@@ -25,7 +25,7 @@ enum SkillLauncherCatalogPublisher {
 
             snapshot = SkillLauncherCatalogSnapshot(
                 generatedAtMs: Int64(Date().timeIntervalSince1970 * 1000),
-                agentID: activeAgent.id.uuidString,
+                agentID: activeAgent.id,
                 skills: skills
             )
         } else {

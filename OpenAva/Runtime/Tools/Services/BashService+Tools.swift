@@ -9,13 +9,13 @@ extension BashService: ToolDefinitionProvider {
                 ToolDefinition(
                     functionName: "bash",
                     command: "bash.execute",
-                    description: "Run a shell command with Claude Code-compatible parameters: `command`, `timeout`, `description`, `run_in_background`, and `dangerouslyDisableSandbox`. Commands run from the active workspace using `/bin/bash -lc`, force non-interactive pager settings, support a single leading `cd <path> && ...` that stays inside the workspace, and reject interactive or unsafe shell features.",
+                    description: "Run a single-line shell command with Claude Code-compatible parameters: `command`, `timeout`, `description`, `run_in_background`, and `dangerouslyDisableSandbox`. Commands run from the active workspace using `/bin/bash -lc`, force non-interactive pager settings, support a single leading `cd <path> && ...` that stays inside the workspace, and reject interactive or unsafe shell features. When combining commands, use separate parallel `bash` calls for independent commands, `&&` for dependent commands, and `;` only when later commands should run even if earlier commands fail. Do not use newline-separated commands in `command`.",
                     parametersSchema: AnyCodable([
                         "type": "object",
                         "properties": [
                             "command": [
                                 "type": "string",
-                                "description": "Shell command to run.",
+                                "description": "Single-line shell command to run. Do not include newline-separated commands; use `&&` for dependent steps or `;` when failure should not stop later steps.",
                             ],
                             "description": [
                                 "type": "string",

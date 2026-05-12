@@ -22,7 +22,7 @@ extension YouTubeTranscriptService: ToolDefinitionProvider {
             ToolDefinition(
                 functionName: "youtube_transcript",
                 command: "youtube.transcript",
-                description: "Fetch and read transcript pages from a YouTube video URL or video ID. For long videos, request a page number and continue with the returned next_page instead of managing page size.",
+                description: "Fetch and read transcript pages from a YouTube video URL or video ID. For content-only tasks, omit format and use the default plain transcript because timestamps are token-expensive. Use segments only when the user explicitly needs timestamps, timecodes, segment numbers, or alignment. For long videos, request a page number and continue with the returned next_page instead of managing page size.",
                 parametersSchema: AnyCodable([
                     "type": "object",
                     "properties": [
@@ -42,7 +42,8 @@ extension YouTubeTranscriptService: ToolDefinitionProvider {
                         "format": [
                             "type": "string",
                             "enum": ["transcript", "segments"],
-                            "description": "Output format. 'transcript' (default): plain transcript text for the current page. 'segments': paginated numbered lines with timestamps for each segment. The tool controls page boundaries automatically to avoid truncation.",
+                            "default": "transcript",
+                            "description": "Output format. 'transcript' (default): token-efficient plain subtitle text for reading, summarizing, translating, quoting content, or understanding the video. 'segments': paginated numbered lines with timestamps for each segment; use only when the user explicitly needs timestamps, timecodes, segment numbers, or alignment. The tool controls page boundaries automatically to avoid truncation.",
                         ],
                     ],
                     "required": ["input"],
