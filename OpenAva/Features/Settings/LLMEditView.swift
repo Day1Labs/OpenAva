@@ -43,28 +43,12 @@ struct LLMEditView: View {
         }
     }
 
-    private var apiKeyPlaceholder: String {
-        "sk-..."
-    }
-
-    private var modelPlaceholder: String {
-        "gpt-5.4"
-    }
-
-    private var namePlaceholder: String {
-        "Model display name"
-    }
-
     private var endpointPlaceholder: String {
         "https://api.openai.com/v1"
     }
 
     private var apiKeyHeaderPlaceholder: String {
         "Authorization"
-    }
-
-    private var providerIDPlaceholder: String {
-        "openai-compatible"
     }
 
     private var contextTokensPlaceholder: String {
@@ -382,20 +366,12 @@ struct LLMEditView: View {
         .buttonStyle(.plain)
     }
 
-    private struct CustomSection<Content: View, Footer: View>: View {
+    private struct CustomSection<Content: View>: View {
         let title: String?
-        let footer: Footer?
         @ViewBuilder let content: () -> Content
 
-        init(title: String? = nil, @ViewBuilder footer: () -> Footer, @ViewBuilder content: @escaping () -> Content) {
+        init(title: String? = nil, @ViewBuilder content: @escaping () -> Content) {
             self.title = title
-            self.footer = footer()
-            self.content = content
-        }
-
-        init(title: String? = nil, @ViewBuilder content: @escaping () -> Content) where Footer == EmptyView {
-            self.title = title
-            self.footer = nil
             self.content = content
         }
 
@@ -409,14 +385,6 @@ struct LLMEditView: View {
                 }
 
                 content()
-
-                if let footer {
-                    footer
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black50))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 20)
-                }
             }
         }
     }
@@ -608,12 +576,8 @@ final class LLMEditViewModel {
         return nil
     }
 
-    var missingRequiredFieldsForTest: [String] {
-        missingRequiredFieldsForSave
-    }
-
     var canTestConnection: Bool {
-        missingRequiredFieldsForTest.isEmpty
+        missingRequiredFieldsForSave.isEmpty
             && endpointValidationMessage == nil
             && contextTokensValidationMessage == nil
             && requestTimeoutValidationMessage == nil
@@ -865,10 +829,10 @@ final class LLMEditViewModel {
             return nil
         }
 
-        let id: UUID
+        let id: String
         switch mode {
         case .add:
-            id = UUID()
+            id = OpenAvaID.generate(.model)
         case let .edit(existingModel):
             id = existingModel.id
         }

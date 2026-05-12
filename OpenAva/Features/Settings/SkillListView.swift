@@ -88,7 +88,7 @@ struct SkillListView: View {
             .task {
                 refreshSkills(force: false)
             }
-            .onChange(of: containerStore.activeAgent?.id.uuidString ?? "") { _, _ in
+            .onChange(of: containerStore.activeAgent?.id ?? "") { _, _ in
                 refreshSkills(force: true)
             }
             .safeAreaInset(edge: .bottom) {
@@ -320,23 +320,18 @@ struct SkillListView: View {
     }
 
     private func presentEditEditor(for skill: SkillListItem) {
-        do {
-            let content = try String(contentsOfFile: skill.path, encoding: .utf8)
-            editorPresentation = SkillEditorPresentation(
-                mode: .edit,
-                skill: skill,
-                initialContent: content
-            )
-        } catch {
-            showError(error)
-        }
+        presentEditor(for: skill, mode: .edit)
     }
 
     private func presentReadOnlyDetail(for skill: SkillListItem) {
+        presentEditor(for: skill, mode: .view)
+    }
+
+    private func presentEditor(for skill: SkillListItem, mode: SkillEditorSheet.Mode) {
         do {
             let content = try String(contentsOfFile: skill.path, encoding: .utf8)
             editorPresentation = SkillEditorPresentation(
-                mode: .view,
+                mode: mode,
                 skill: skill,
                 initialContent: content
             )
@@ -645,7 +640,6 @@ private enum SkillSaveOutcome {
 private struct SkillFeedbackBanner: Identifiable {
     let id = UUID()
     let message: String
-    let systemImage: String
 
     init(outcome: SkillSaveOutcome) {
         switch outcome {
@@ -660,8 +654,6 @@ private struct SkillFeedbackBanner: Identifiable {
         case let .disabled(name):
             message = L10n.tr("settings.skills.feedback.disabled", name)
         }
-
-        systemImage = "checkmark.circle.fill"
     }
 }
 
@@ -1663,7 +1655,7 @@ private struct FeedbackBannerView: View {
                     .fill(Color.green.opacity(0.15))
                     .frame(width: 30, height: 30)
 
-                Image(systemName: banner.systemImage)
+                Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(.green)
             }

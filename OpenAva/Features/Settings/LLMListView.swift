@@ -6,17 +6,12 @@ struct LLMListView: View {
     @Environment(\.appContainerStore) private var containerStore
 
     @State private var models: [AppConfig.LLMModel] = []
-    @State private var selectedModelID: UUID?
     @State private var isShowingAddSheet = false
     @State private var editingModel: AppConfig.LLMModel?
     @State private var modelToDelete: AppConfig.LLMModel?
     @State private var showResetUsageConfirmation = false
 
     @State private var envKeys: [LLMProvider: String] = [:]
-
-    private var selectedModel: AppConfig.LLMModel? {
-        models.first(where: { $0.id == selectedModelID }) ?? models.first
-    }
 
     private var deleteAlertBinding: Binding<Bool> {
         Binding(
@@ -258,7 +253,6 @@ struct LLMListView: View {
     private func refreshModels() {
         let collection = containerStore.container.config.llmCollection
         models = collection.models
-        selectedModelID = containerStore.container.config.selectedLLMModelID
     }
 
     private func fetchEnvKeys() {
@@ -319,14 +313,6 @@ struct LLMListView: View {
     private func usageRecord(for model: AppConfig.LLMModel) -> ModelUsageRecord? {
         guard let key = model.model else { return nil }
         return containerStore.usageSnapshot.byModel[key]
-    }
-
-    private var configuredFooterText: String {
-        #if targetEnvironment(macCatalyst)
-            L10n.tr("settings.llmList.configured.footer.mac")
-        #else
-            L10n.tr("settings.llmList.configured.footer")
-        #endif
     }
 
     @ViewBuilder
@@ -400,11 +386,6 @@ struct LLMListView: View {
     private func formatUsageCost(_ usd: Double) -> String {
         if usd < 0.001 { return "< $0.001" }
         return String(format: "$%.4f", usd)
-    }
-
-    private func selectModel(_ model: AppConfig.LLMModel) {
-        containerStore.selectLLMModel(id: model.id)
-        selectedModelID = model.id
     }
 
     private func openEditor(for model: AppConfig.LLMModel) {
@@ -503,7 +484,7 @@ private struct ModelRow: View {
                         .lineLimit(1)
 
                     if !model.isConfigured {
-                        CompactTag(text: L10n.tr("settings.llmList.status.incomplete"), tone: .neutral)
+                        CompactTag(text: L10n.tr("settings.llmList.status.incomplete"))
                     }
                 }
 
@@ -652,44 +633,21 @@ private struct CountBadge: View {
     }
 }
 
-enum CompactTagTone {
-    case accent, success, warning, neutral
-
-    var foreground: Color {
-        switch self {
-        case .accent: return Color(uiColor: ChatUIDesign.Color.brandOrange)
-        case .success: return .green
-        case .warning: return .orange
-        case .neutral: return Color(uiColor: ChatUIDesign.Color.black60)
-        }
-    }
-
-    var background: Color {
-        switch self {
-        case .accent: return Color(uiColor: ChatUIDesign.Color.brandOrange).opacity(0.1)
-        case .success: return .green.opacity(0.1)
-        case .warning: return .orange.opacity(0.1)
-        case .neutral: return Color(uiColor: ChatUIDesign.Color.black80).opacity(0.05)
-        }
-    }
-}
-
-struct CompactTag: View {
+private struct CompactTag: View {
     let text: String
-    let tone: CompactTagTone
 
     var body: some View {
         Text(text)
             .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(tone.foreground)
+            .foregroundStyle(Color(uiColor: ChatUIDesign.Color.black60))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(tone.background)
+            .background(Color(uiColor: ChatUIDesign.Color.black80).opacity(0.05))
             .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
     }
 }
 
-struct TokenUsageHeatmapView: View {
+private struct TokenUsageHeatmapView: View {
     let dailyUsage: [String: Int]
 
     private let columns = 52
