@@ -1,0 +1,27 @@
+OpenAva/Features/Chat/ChatViewControllerWrapper.swift
+  c5281ad2b8a56937 336-367,459,461,480-483
+OpenAva/Features/Chat/ChatViewController.swift
+  c5281ad2b8a56937 160-161,166-176,179-182,187-197,299-325,332-340,342-344,346-347,1089-1091,1093-1110,1113,1115-1117,1119-1122,1124-1128,1130,1132-1157,1159-1178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "aa09a7242bea755aa981feef36a7e3c9934ff1a0",
+  "prompts": {
+    "c5281ad2b8a56937": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a01f738b60abff3fd1d5bb9",
+        "model": "openrouter-2o__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 116,
+      "overriden_lines": 0
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
