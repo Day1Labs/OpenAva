@@ -1,0 +1,43 @@
+OpenAva/Runtime/Tools/Core/ToolRegistryProvider.swift
+  14f9e4e03b5ea2a9 35-37
+OpenAva/Runtime/Tools/Core/ToolRuntime.swift
+  14f9e4e03b5ea2a9 46
+OpenAva/App/AppWindows.swift
+  14f9e4e03b5ea2a9 11,24-25,59-60
+OpenAva/Features/Settings/SkillListView.swift
+  14f9e4e03b5ea2a9 604,623
+OpenAva/Features/Chat/ChatTopBar.swift
+  14f9e4e03b5ea2a9 177,474-479
+OpenAva/en.lproj/Localizable.strings
+  14f9e4e03b5ea2a9 155
+OpenAva/Features/Chat/ChatViewControllerWrapper.swift
+  14f9e4e03b5ea2a9 249,1526
+OpenAva/Features/Chat/ChatRootView.swift
+  14f9e4e03b5ea2a9 59,489-490,514-515,544-546,956-957
+OpenAva/Features/Settings/ToolListView.swift
+  14f9e4e03b5ea2a9 51
+OpenAva/zh-Hans.lproj/Localizable.strings
+  14f9e4e03b5ea2a9 155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "0e1e17df7b37d56ce863a08b1cb81e9d21a9fe3d",
+  "prompts": {
+    "14f9e4e03b5ea2a9": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a03590bb60abff3fd1d656f",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
