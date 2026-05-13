@@ -59,6 +59,10 @@ open class ChatInputView: EditorSectionView {
         didSet { updateModelButtonTitle() }
     }
 
+    public var selectedModelIcon: UIImage? {
+        didSet { inputEditor.setModelIcon(selectedModelIcon) }
+    }
+
     private func updateModelButtonTitle() {
         let modelTitle = selectedModelName?.trimmingCharacters(in: .whitespacesAndNewlines)
         let detailTitle = selectedModelDetail?.trimmingCharacters(in: .whitespacesAndNewlines)

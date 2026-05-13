@@ -98,14 +98,16 @@ extension InputEditor {
             height: iconSize.height
         )
 
-        let rawModelSize = modelButton.sizeThatFits(CGSize(width: bounds.width, height: pillHeight))
+        let rawModelSize = modelButtonPreferredSize(height: pillHeight)
         let maxModelWidth = max(72, min(rawModelSize.width, bounds.width * 0.26))
+        applyModelButtonTitle(availableTitleWidth: max(0, maxModelWidth - modelButtonChromeWidth()))
         modelButton.frame = CGRect(
             x: voiceButton.frame.minX - maxModelWidth - compactSpacing,
             y: iconBottomY - (pillHeight - iconSize.height) / 2,
             width: maxModelWidth,
             height: pillHeight
         )
+        layoutModelButtonIcon()
 
         contextButton.frame = CGRect(
             x: modelButton.frame.minX - iconSize.width - compactSpacing,

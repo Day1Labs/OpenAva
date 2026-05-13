@@ -51,6 +51,15 @@ final class InputEditor: EditorSectionView {
     }()
 
     let contextButton = ContextUsageButton(icon: "gauge")
+    private var modelButtonTitle: String?
+    private var modelButtonDetailTitle: String?
+    private var hasModelButtonIcon = false
+
+    private let modelButtonIconSize: CGFloat = 16
+    private let modelButtonIconTextSpacing: CGFloat = 6
+    private let modelButtonBaseContentInsets = NSDirectionalEdgeInsets(top: 4, leading: 10, bottom: 4, trailing: 8)
+    private let modelButtonIconView = UIImageView()
+
     let modelButton: UIButton = {
         let button = UIButton(type: .custom)
         #if targetEnvironment(macCatalyst)
@@ -163,6 +172,10 @@ final class InputEditor: EditorSectionView {
         }
         elementClipper.addSubview(contextButton)
         elementClipper.addSubview(modelButton)
+        modelButtonIconView.contentMode = .scaleAspectFit
+        modelButtonIconView.clipsToBounds = true
+        modelButtonIconView.isUserInteractionEnabled = false
+        modelButton.addSubview(modelButtonIconView)
 
         let secondaryColor = ChatUIDesign.Color.black60
         bossButton.imageView.tintColor = secondaryColor
@@ -298,31 +311,59 @@ final class InputEditor: EditorSectionView {
     }
 
     func setModelTitle(_ title: String?, detail: String? = nil) {
-        let modelTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let detailTitle = detail?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayTitle = [modelTitle, detailTitle]
+        modelButtonTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        modelButtonDetailTitle = detail?.trimmingCharacters(in: .whitespacesAndNewlines)
+        applyModelButtonTitle(availableTitleWidth: nil)
+        modelButton.sizeToFit()
+        setNeedsLayout()
+    }
+
+    func setModelIcon(_ image: UIImage?) {
+        modelButtonIconView.image = image
+        hasModelButtonIcon = image != nil
+        modelButtonIconView.isHidden = image == nil
+        applyModelButtonTitle(availableTitleWidth: nil)
+        modelButton.sizeToFit()
+        setNeedsLayout()
+    }
+
+    func modelButtonPreferredSize(height: CGFloat) -> CGSize {
+        let titleWidth = modelButtonTitleWidth(modelTitle: modelButtonTitle, detailTitle: modelButtonDetailTitle)
+        return CGSize(width: ceil(titleWidth + modelButtonChromeWidth()), height: height)
+    }
+
+    func applyModelButtonTitle(availableTitleWidth: CGFloat?) {
+        let displayModelTitle = modelButtonDisplayModelTitle(availableTitleWidth: availableTitleWidth)
+        let displayTitle = [modelButtonTitle, modelButtonDetailTitle]
             .compactMap { $0 }
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-
         if #available(iOS 15.0, *) {
             var configuration = modelButton.configuration ?? .plain()
             let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+            configuration.contentInsets = modelButtonContentInsets()
             configuration.image = UIImage(systemName: "chevron.down", withConfiguration: config)?
                 .withTintColor(ChatUIDesign.Color.black50, renderingMode: .alwaysOriginal)
             configuration.title = nil
-            configuration.attributedTitle = modelButtonAttributedTitle(modelTitle: modelTitle, detailTitle: detailTitle)
+            configuration.attributedTitle = modelButtonAttributedTitle(
+                modelTitle: displayModelTitle,
+                detailTitle: modelButtonDetailTitle
+            )
             configuration.titleLineBreakMode = .byTruncatingTail
             configuration.baseForegroundColor = ChatUIDesign.Color.black80
             modelButton.configuration = configuration
         } else {
-            modelButton.setAttributedTitle(modelButtonNSAttributedTitle(modelTitle: modelTitle, detailTitle: detailTitle), for: .normal)
+            let contentInsets = modelButtonContentEdgeInsets()
+            modelButton.contentEdgeInsets = contentInsets
+            modelButton.setAttributedTitle(
+                modelButtonNSAttributedTitle(modelTitle: displayModelTitle, detailTitle: modelButtonDetailTitle),
+                for: .normal
+            )
         }
         modelButton.titleLabel?.numberOfLines = 1
         modelButton.titleLabel?.lineBreakMode = .byTruncatingTail
         modelButton.accessibilityLabel = displayTitle.isEmpty ? nil : displayTitle
-        modelButton.sizeToFit()
-        setNeedsLayout()
+        layoutModelButtonIcon()
     }
 
     @available(iOS 15.0, *)
@@ -370,6 +411,107 @@ final class InputEditor: EditorSectionView {
             ))
         }
         return result.length == 0 ? nil : result
+    }
+
+    private func modelButtonDisplayModelTitle(availableTitleWidth: CGFloat?) -> String? {
+        guard let modelTitle = modelButtonTitle, !modelTitle.isEmpty else { return nil }
+        guard let availableTitleWidth,
+              let detailTitle = modelButtonDetailTitle,
+              !detailTitle.isEmpty
+        else {
+            return modelTitle
+        }
+
+        let separatorWidth = modelButtonTextWidth(" ")
+        let detailWidth = modelButtonTextWidth(detailTitle)
+        let availableModelWidth = availableTitleWidth - detailWidth - separatorWidth
+        guard modelButtonTextWidth(modelTitle) > availableModelWidth else {
+            return modelTitle
+        }
+        return truncatedModelTitle(modelTitle, maxWidth: availableModelWidth)
+    }
+
+    private func truncatedModelTitle(_ title: String, maxWidth: CGFloat) -> String? {
+        let ellipsis = "..."
+        let ellipsisWidth = modelButtonTextWidth(ellipsis)
+        guard maxWidth >= ellipsisWidth else { return nil }
+
+        let characters = Array(title)
+        var lower = 0
+        var upper = characters.count
+        var best = ellipsis
+
+        while lower <= upper {
+            let middle = (lower + upper) / 2
+            let candidate = String(characters.prefix(middle)) + ellipsis
+            if modelButtonTextWidth(candidate) <= maxWidth {
+                best = candidate
+                lower = middle + 1
+            } else {
+                upper = middle - 1
+            }
+        }
+        return best
+    }
+
+    private func modelButtonTitleWidth(modelTitle: String?, detailTitle: String?) -> CGFloat {
+        var width: CGFloat = 0
+        if let modelTitle, !modelTitle.isEmpty {
+            width += modelButtonTextWidth(modelTitle)
+        }
+        if let detailTitle, !detailTitle.isEmpty {
+            if width > 0 {
+                width += modelButtonTextWidth(" ")
+            }
+            width += modelButtonTextWidth(detailTitle)
+        }
+        return width
+    }
+
+    private func modelButtonTextWidth(_ text: String) -> CGFloat {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+        ]
+        return ceil((text as NSString).size(withAttributes: attributes).width)
+    }
+
+    func modelButtonChromeWidth() -> CGFloat {
+        if #available(iOS 15.0, *), let configuration = modelButton.configuration {
+            let imageWidth = configuration.image?.size.width ?? 0
+            let imagePadding = imageWidth > 0 ? configuration.imagePadding : 0
+            return configuration.contentInsets.leading + configuration.contentInsets.trailing + imageWidth + imagePadding
+        }
+
+        let imageWidth = modelButton.image(for: .normal)?.size.width ?? 0
+        let imagePadding = imageWidth > 0 ? modelButton.imageEdgeInsets.left + modelButton.imageEdgeInsets.right : 0
+        return modelButton.contentEdgeInsets.left + modelButton.contentEdgeInsets.right + imageWidth + imagePadding
+    }
+
+    func layoutModelButtonIcon() {
+        guard hasModelButtonIcon else {
+            modelButtonIconView.frame = .zero
+            return
+        }
+
+        modelButtonIconView.frame = CGRect(
+            x: modelButtonBaseContentInsets.leading,
+            y: (modelButton.bounds.height - modelButtonIconSize) / 2,
+            width: modelButtonIconSize,
+            height: modelButtonIconSize
+        )
+    }
+
+    private func modelButtonContentInsets() -> NSDirectionalEdgeInsets {
+        var insets = modelButtonBaseContentInsets
+        if hasModelButtonIcon {
+            insets.leading += modelButtonIconSize + modelButtonIconTextSpacing
+        }
+        return insets
+    }
+
+    private func modelButtonContentEdgeInsets() -> UIEdgeInsets {
+        let insets = modelButtonContentInsets()
+        return UIEdgeInsets(top: insets.top, left: insets.leading, bottom: insets.bottom, right: insets.trailing)
     }
 
     func setPermissionTitle(_ title: String?, systemImageName: String?) {

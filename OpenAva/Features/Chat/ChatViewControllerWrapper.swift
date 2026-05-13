@@ -986,12 +986,23 @@ extension ChatViewControllerWrapper {
         func configureInputControls(on controller: ChatViewController) {
             controller.chatInputView.permissionButtonMenu = makeToolPermissionMenu(for: controller)
             controller.chatInputView.selectedModelDetail = selectedThinkingStrength.inputDetailTitle
+            controller.chatInputView.selectedModelIcon = selectedModelInputIcon()
             controller.chatInputView.contextUsageTapAction = { [weak self, weak controller] in
                 guard let self, let controller else { return }
                 Task { @MainActor in
                     await self.presentContextUsagePanel(from: controller)
                 }
             }
+        }
+
+        private func selectedModelInputIcon() -> UIImage? {
+            let collection = LLMConfigStore.loadCollection()
+            guard let selectedModel = collection.models.first(where: { $0.name == selectedModelName }),
+                  let providerType = LLMProvider(rawValue: selectedModel.provider)
+            else {
+                return UIImage(systemName: "cpu")
+            }
+            return UIImage(named: providerType.iconName) ?? UIImage(systemName: "cpu")
         }
 
         private func makeToolPermissionMenu(for controller: ChatViewController) -> UIMenu {
