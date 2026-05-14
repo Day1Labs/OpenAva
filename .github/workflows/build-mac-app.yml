@@ -4,7 +4,23 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'OpenAva/**'
+      - 'ActivityWidget/**'
+      - 'OpenAvaTests/**'
+      - 'ChatKit/**'
+      - 'OpenClawKit/**'
+      - 'OpenAva.xcodeproj/**'
+      - '.github/workflows/build-mac-app.yml'
   pull_request:
+    paths:
+      - 'OpenAva/**'
+      - 'ActivityWidget/**'
+      - 'OpenAvaTests/**'
+      - 'ChatKit/**'
+      - 'OpenClawKit/**'
+      - 'OpenAva.xcodeproj/**'
+      - '.github/workflows/build-mac-app.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +37,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Show Xcode version
         run: |
@@ -43,10 +59,47 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Import Developer ID certificate
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id-application.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          if [[ -z "$MACOS_CERTIFICATE_P12_BASE64" || -z "$MACOS_CERTIFICATE_PASSWORD" || -z "$KEYCHAIN_PASSWORD" ]]; then
+            echo "Developer ID signing secrets are missing." >&2
+            exit 1
+          fi
+
+          echo "$MACOS_CERTIFICATE_P12_BASE64" | base64 -D > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          SIGNING_IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | awk -F '"' '/Developer ID Application/ { print $2; exit }')"
+          if [[ -z "$SIGNING_IDENTITY" ]]; then
+            echo "Developer ID Application signing identity not found in imported certificate." >&2
+            exit 1
+          fi
+
+          echo "SIGNING_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
+          echo "Imported signing identity: $SIGNING_IDENTITY"
+
       - name: Package app
         env:
           DERIVED_DATA_DIR: ${{ runner.temp }}/DerivedData
           PACKAGE_DIR: ${{ runner.temp }}/package
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -euo pipefail
 
@@ -56,12 +109,34 @@ jobs:
 
           test -d "$APP_PATH"
           mkdir -p "$PACKAGE_DIR"
-          codesign --force --deep --sign - "$APP_PATH"
+
+          if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
+            if [[ -z "$APPLE_ID" || -z "$APPLE_APP_SPECIFIC_PASSWORD" || -z "$APPLE_TEAM_ID" ]]; then
+              echo "Notarization secrets are missing." >&2
+              exit 1
+            fi
+
+            codesign --force --deep --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$APP_PATH"
+            codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+            NOTARY_ZIP_PATH="$PACKAGE_DIR/OpenAva-macOS-notary.zip"
+            ditto -c -k --keepParent "$APP_PATH" "$NOTARY_ZIP_PATH"
+            xcrun notarytool submit "$NOTARY_ZIP_PATH" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            xcrun stapler staple "$APP_PATH"
+            xcrun stapler validate "$APP_PATH"
+          else
+            codesign --force --deep --sign - "$APP_PATH"
+          fi
+
           ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
           shasum -a 256 "$ZIP_PATH" > "$SHA_PATH"
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: OpenAva-macOS-dev
           path: |
@@ -80,11 +155,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh release delete "$TAG_NAME" --yes --cleanup-tag || true
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release delete "$TAG_NAME" --yes --cleanup-tag
+          else
+            echo "No existing $TAG_NAME release to replace."
+          fi
+
           git tag --force "$TAG_NAME" "$GITHUB_SHA"
           git push --force origin "$TAG_NAME"
           gh release create "$TAG_NAME" "$ZIP_PATH" "$SHA_PATH" \
             --title "Latest development build" \
-            --notes "Automated Mac development build from commit $GITHUB_SHA. This build is ad-hoc signed and not notarized." \
+            --notes "Automated Mac development build from commit $GITHUB_SHA. This build is Developer ID signed and notarized." \
             --prerelease \
             --latest=false

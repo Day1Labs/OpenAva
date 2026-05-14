@@ -10,7 +10,7 @@ OpenAva is a native Apple-platform app for running personal AI agents with real 
 
 - Latest Mac development build: [OpenAva-macOS-dev.zip](https://github.com/Day1Labs/OpenAva/releases/download/dev-build/OpenAva-macOS-dev.zip)
 - Checksum: [OpenAva-macOS-dev.zip.sha256](https://github.com/Day1Labs/OpenAva/releases/download/dev-build/OpenAva-macOS-dev.zip.sha256)
-- This build is generated from the latest successful `main` workflow run. It is ad-hoc signed for development use and is not notarized, so macOS may require opening it from Finder with **Right Click → Open** the first time.
+- This build is generated from the latest successful `main` workflow run and is Developer ID signed and notarized.
 
 ---
 
