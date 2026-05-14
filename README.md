@@ -75,7 +75,7 @@ The goal is not to remember everything, but to help the agent keep what is worth
 ## Requirements
 
 - **iOS 18.0+** / **macOS 15.0+** (Mac Catalyst)
-- **Xcode 16+**
+- **Xcode 26+** / Swift 6.2+
 - Access to a compatible OpenClaw gateway node
 - At least one configured LLM endpoint
 
