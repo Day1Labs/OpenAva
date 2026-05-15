@@ -57,7 +57,6 @@ The development build is Developer ID signed and notarized.
 | Device-aware tools | Connect agents to device surfaces such as files, notifications, media, contacts, calendar, reminders, and more. |
 | Model flexibility | Bring your own model providers, configure endpoints, and switch between provider profiles. |
 | Remote control | Access and steer active agent workflows from another device when needed. |
-| Localization | Use the app in English or Simplified Chinese. |
 
 ## Agent Teams
 
@@ -76,11 +75,9 @@ Each agent can keep its own role and workspace while still collaborating inside 
 ### Try the macOS development build
 
 1. Download [OpenAva-macOS-dev.zip](https://github.com/Day1Labs/OpenAva/releases/download/dev-build/OpenAva-macOS-dev.zip).
-2. Optionally verify the archive with [OpenAva-macOS-dev.zip.sha256](https://github.com/Day1Labs/OpenAva/releases/download/dev-build/OpenAva-macOS-dev.zip.sha256).
-3. Launch OpenAva.
+2. Launch OpenAva.
+3. Create your first agent or team and start chatting.
 4. Configure an LLM provider in **Settings > LLM**.
-5. Connect the app to a compatible OpenClaw gateway environment.
-6. Create your first agent or team and start chatting.
 
 ### Build from source
 
@@ -104,43 +101,6 @@ To develop OpenAva:
 
 - Xcode 26+
 - Swift 6.2+
-
-## Build from the Command Line
-
-Build the iOS app for Simulator:
-
-```bash
-xcodebuild \
-  -project OpenAva.xcodeproj \
-  -scheme OpenAva \
-  -configuration Debug \
-  -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
-
-Build the macOS app via Mac Catalyst:
-
-```bash
-xcodebuild \
-  -project OpenAva.xcodeproj \
-  -scheme OpenAva \
-  -configuration Release \
-  -destination 'generic/platform=macOS,variant=Mac Catalyst' \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
-
-## Repository Map
-
-| Path | Purpose |
-| --- | --- |
-| `OpenAva/` | Main Apple-platform app source. |
-| `ChatKit/` | Chat UI and model-provider client package. |
-| `OpenClawKit/` | Gateway, device command, and local control support. |
-| `ActivityWidget/` | Widget and live activity surfaces. |
-| `OpenAvaTests/` | App-level runtime and feature tests. |
-| `DESIGN.md` | Visual design guidelines for the product. |
 
 ## Good First Contributions
 
