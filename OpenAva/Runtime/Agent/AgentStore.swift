@@ -455,11 +455,10 @@ enum AgentStore {
             fileManager: fileManager
         )
 
-        state.agents.append(profile)
         if state.activeAgentID == nil {
             state.activeAgentID = profile.id
+            persistActiveAgentID(state.activeAgentID, fileManager: fileManager, workspaceRootURL: rootURL)
         }
-        persist(state: state, fileManager: fileManager, workspaceRootURL: rootURL)
         return profile
     }
 
@@ -486,7 +485,6 @@ enum AgentStore {
             fileManager: fileManager
         )
         persistAgentMetadata(profile, fileManager: fileManager)
-        persist(state: state, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
         return profile
     }
 
@@ -523,7 +521,6 @@ enum AgentStore {
             fileManager: fileManager
         )
         persistAgentMetadata(profile, fileManager: fileManager)
-        persist(state: state, fileManager: fileManager, workspaceRootURL: rootURL)
         return profile
     }
 
@@ -539,7 +536,7 @@ enum AgentStore {
         }
 
         state.activeAgentID = agentID
-        persist(state: state, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
+        persistActiveAgentID(state.activeAgentID, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
         return true
     }
 
@@ -561,7 +558,7 @@ enum AgentStore {
             state.activeAgentID = state.agents.first?.id
         }
 
-        persist(state: state, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
+        persistActiveAgentID(state.activeAgentID, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
 
         // Best-effort cleanup for the deleted agent-owned support root only.
         // Never delete `workspaceURL`: it is the shared project workspace.
@@ -638,14 +635,14 @@ enum AgentStore {
         }
     }
 
-    private static func persist(
-        state: AgentStateSnapshot,
+    private static func persistActiveAgentID(
+        _ activeAgentID: String?,
         fileManager: FileManager,
         workspaceRootURL: URL?
     ) {
         var payload = OpenAvaProjectFile.load(fileManager: fileManager, workspaceRootURL: workspaceRootURL)
             ?? OpenAvaProjectState()
-        payload.activeAgentID = state.activeAgentID
+        payload.activeAgentID = activeAgentID
         OpenAvaProjectFile.persist(payload, fileManager: fileManager, workspaceRootURL: workspaceRootURL)
     }
 
