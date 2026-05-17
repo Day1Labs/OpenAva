@@ -1,5 +1,5 @@
 {
-  "originHash" : "5dbe1072829a45e8175151595d612e6be6e12b218a591a70daf450f805571070",
+  "originHash" : "18044a8b7194cc6a1c26b57b9b663a8a83f84a3b5b67f8471944a25330ce3b8c",
   "pins" : [
     {
       "identity" : "alignedcollectionviewflowlayout",
@@ -80,15 +80,6 @@
       "state" : {
         "revision" : "a2ed9b63ae623a20591effc72f9db7d04e41a64c",
         "version" : "1.2.1"
-      }
-    },
-    {
-      "identity" : "lookinserver",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/QMUI/LookinServer/",
-      "state" : {
-        "revision" : "e553d1b689d147817dc54ad5c28fcff71e860101",
-        "version" : "1.2.8"
       }
     },
     {

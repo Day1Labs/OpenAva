@@ -9,12 +9,8 @@
 /* Begin PBXBuildFile section */
 		2B41971E2F671D0E0034620C /* DebugSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2B41971D2F671D0E0034620C /* DebugSwift */; };
 		2B4F30A22F5817000047B2B6 /* OpenClawKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2B4F30A52F5817000047B2B6 /* OpenClawKit */; };
-		2B4F30A32F5817000047B2B6 /* OpenClawProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 2B4F30A62F5817000047B2B6 /* OpenClawProtocol */; };
 		2B4F30B72F5817000047B2B6 /* OpenClawKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2B4F30A52F5817000047B2B6 /* OpenClawKit */; };
 		2B4F30B82F5817000047B2B6 /* OpenClawProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 2B4F30A62F5817000047B2B6 /* OpenClawProtocol */; };
-		2B6AE6DB2F95FEBC006F07A4 /* LookinServer in Frameworks */ = {isa = PBXBuildFile; productRef = 2B6AE6DA2F95FEBC006F07A4 /* LookinServer */; };
-		2B86D84D2FAB325C00D237D0 /* OpenTelemetryApi in Frameworks */ = {isa = PBXBuildFile; productRef = 2B86D84C2FAB325C00D237D0 /* OpenTelemetryApi */; };
-		2B86D84F2FAB325C00D237D0 /* OpenTelemetrySdk in Frameworks */ = {isa = PBXBuildFile; productRef = 2B86D84E2FAB325C00D237D0 /* OpenTelemetrySdk */; };
 		2BDF6D6B2F601579007D4C27 /* ChatClient in Frameworks */ = {isa = PBXBuildFile; productRef = 2BDF6D6A2F601579007D4C27 /* ChatClient */; };
 		2BDF6D6D2F601579007D4C27 /* ChatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 2BDF6D6C2F601579007D4C27 /* ChatUI */; };
 		7C8B5D102F70020000A1B2C3 /* OpenClawKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2B4F30A52F5817000047B2B6 /* OpenClawKit */; };
@@ -112,13 +108,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				2BDF6D6D2F601579007D4C27 /* ChatUI in Frameworks */,
-				2B6AE6DB2F95FEBC006F07A4 /* LookinServer in Frameworks */,
 				2B4F30A22F5817000047B2B6 /* OpenClawKit in Frameworks */,
 				2B41971E2F671D0E0034620C /* DebugSwift in Frameworks */,
 				2BDF6D6B2F601579007D4C27 /* ChatClient in Frameworks */,
-				2B4F30A32F5817000047B2B6 /* OpenClawProtocol in Frameworks */,
-				2B86D84D2FAB325C00D237D0 /* OpenTelemetryApi in Frameworks */,
-				2B86D84F2FAB325C00D237D0 /* OpenTelemetrySdk in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -203,13 +195,9 @@
 			name = OpenAva;
 			packageProductDependencies = (
 				2B4F30A52F5817000047B2B6 /* OpenClawKit */,
-				2B4F30A62F5817000047B2B6 /* OpenClawProtocol */,
 				2BDF6D6A2F601579007D4C27 /* ChatClient */,
 				2BDF6D6C2F601579007D4C27 /* ChatUI */,
 				2B41971D2F671D0E0034620C /* DebugSwift */,
-				2B6AE6DA2F95FEBC006F07A4 /* LookinServer */,
-				2B86D84C2FAB325C00D237D0 /* OpenTelemetryApi */,
-				2B86D84E2FAB325C00D237D0 /* OpenTelemetrySdk */,
 			);
 			productName = OpenAva;
 			productReference = 2B4F308F2F5813FF0047B2B6 /* OpenAva.app */;
@@ -298,9 +286,7 @@
 				2B4F30A42F5817000047B2B6 /* XCLocalSwiftPackageReference "OpenClawKit" */,
 				2BDF6D692F601579007D4C27 /* XCLocalSwiftPackageReference "ChatKit" */,
 				2B41971C2F671D0E0034620C /* XCRemoteSwiftPackageReference "DebugSwift" */,
-				2B6AE6D92F95FEBC006F07A4 /* XCRemoteSwiftPackageReference "LookinServer" */,
 				2B86D84A2FAB323500D237D0 /* XCRemoteSwiftPackageReference "opentelemetry-swift" */,
-				2B86D84B2FAB325C00D237D0 /* XCRemoteSwiftPackageReference "opentelemetry-swift-core" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B4F30902F5813FF0047B2B6 /* Products */;
@@ -743,28 +729,12 @@
 				kind = branch;
 			};
 		};
-		2B6AE6D92F95FEBC006F07A4 /* XCRemoteSwiftPackageReference "LookinServer" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/QMUI/LookinServer/";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.8;
-			};
-		};
 		2B86D84A2FAB323500D237D0 /* XCRemoteSwiftPackageReference "opentelemetry-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/open-telemetry/opentelemetry-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.3.0;
-			};
-		};
-		2B86D84B2FAB325C00D237D0 /* XCRemoteSwiftPackageReference "opentelemetry-swift-core" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/open-telemetry/opentelemetry-swift-core";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.4.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -784,21 +754,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2B4F30A42F5817000047B2B6 /* XCLocalSwiftPackageReference "OpenClawKit" */;
 			productName = OpenClawProtocol;
-		};
-		2B6AE6DA2F95FEBC006F07A4 /* LookinServer */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B6AE6D92F95FEBC006F07A4 /* XCRemoteSwiftPackageReference "LookinServer" */;
-			productName = LookinServer;
-		};
-		2B86D84C2FAB325C00D237D0 /* OpenTelemetryApi */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B86D84B2FAB325C00D237D0 /* XCRemoteSwiftPackageReference "opentelemetry-swift-core" */;
-			productName = OpenTelemetryApi;
-		};
-		2B86D84E2FAB325C00D237D0 /* OpenTelemetrySdk */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B86D84B2FAB325C00D237D0 /* XCRemoteSwiftPackageReference "opentelemetry-swift-core" */;
-			productName = OpenTelemetrySdk;
 		};
 		2BDF6D6A2F601579007D4C27 /* ChatClient */ = {
 			isa = XCSwiftPackageProductDependency;
