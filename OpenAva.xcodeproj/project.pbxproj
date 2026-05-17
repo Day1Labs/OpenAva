@@ -142,7 +142,7 @@
 				2B4F30BD2F5817000047B2B6 /* OpenAvaTests */,
 				2BDF6D662F6012AC007D4C27 /* Frameworks */,
 				2B4F30902F5813FF0047B2B6 /* Products */,
-				2B95995E2F726D8F00D18222 /* Recovered References */,
+				2B95995E2F726D8F00D18222 /* Shared Activity Attributes */,
 			);
 			sourceTree = "<group>";
 		};
@@ -156,13 +156,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		2B95995E2F726D8F00D18222 /* Recovered References */ = {
+		2B95995E2F726D8F00D18222 /* Shared Activity Attributes */ = {
 			isa = PBXGroup;
 			children = (
 				AC110001FACE0001FA000001 /* TaskActivityAttributes.swift */,
 				AC110002FACE0002FA000002 /* CronActivityAttributes.swift */,
 			);
-			name = "Recovered References";
+			name = "Shared Activity Attributes";
 			sourceTree = "<group>";
 		};
 		2BDF6D662F6012AC007D4C27 /* Frameworks */ = {
