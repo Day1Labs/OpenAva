@@ -683,18 +683,32 @@ open class ChatViewController: UIViewController {
             width: chatColumn.width,
             height: totalInputHeight
         )
-        chatInputView.frame = inputFrame
         if isShareSelectionModeEnabled {
             let pillHeight: CGFloat = 64
             let pillWidth: CGFloat = min(480, chatColumn.width - 24)
             let pillX = chatColumn.minX + (chatColumn.width - pillWidth) / 2
             let pillY = chatColumn.maxY - safeArea.bottom - pillHeight - 16
             shareSelectionToolbar.frame = CGRect(x: pillX, y: pillY, width: pillWidth, height: pillHeight)
+            shareSelectionToolbar.alpha = 1
+            
+            chatInputView.frame = CGRect(
+                x: inputFrame.minX,
+                y: chatColumn.maxY,
+                width: inputFrame.width,
+                height: inputFrame.height
+            )
+            chatInputView.alpha = 0
         } else {
-            shareSelectionToolbar.frame = inputFrame
+            let pillHeight: CGFloat = 64
+            let pillWidth: CGFloat = min(480, chatColumn.width - 24)
+            let pillX = chatColumn.minX + (chatColumn.width - pillWidth) / 2
+            let hiddenPillY = chatColumn.maxY
+            shareSelectionToolbar.frame = CGRect(x: pillX, y: hiddenPillY, width: pillWidth, height: pillHeight)
+            shareSelectionToolbar.alpha = 0
+            
+            chatInputView.frame = inputFrame
+            chatInputView.alpha = 1
         }
-        chatInputView.isHidden = isShareSelectionModeEnabled
-        shareSelectionToolbar.isHidden = !isShareSelectionModeEnabled
 
         let listTop: CGFloat
         if embeddedWebHostView != nil, chatColumn.minY > 0 {
@@ -759,8 +773,14 @@ open class ChatViewController: UIViewController {
         messageListView.isSelectionModeEnabled = true
         updateShareSelectionToolbar(selectedCount: messageListView.selectedMessageIDs.count)
         configureNavigationItems()
-        UIView.animate(withDuration: 0.2) {
+        
+        shareSelectionToolbar.isHidden = false
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
             self.layoutViews()
+        } completion: { _ in
+            if self.isShareSelectionModeEnabled {
+                self.chatInputView.isHidden = true
+            }
         }
     }
 
@@ -773,8 +793,14 @@ open class ChatViewController: UIViewController {
         messageListView.isSelectionModeEnabled = false
         updateShareSelectionToolbar(selectedCount: 0)
         configureNavigationItems()
-        UIView.animate(withDuration: 0.2) {
+        
+        chatInputView.isHidden = false
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
             self.layoutViews()
+        } completion: { _ in
+            if !self.isShareSelectionModeEnabled {
+                self.shareSelectionToolbar.isHidden = true
+            }
         }
     }
 
