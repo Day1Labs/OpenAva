@@ -1,0 +1,361 @@
+ChatKit/Sources/ChatUI/View/MessageList/MessageListView.swift
+  2c9d41c6d14447ff 265,270,275-294,297-306
+  a5bc54e2cee7bb74 18,23-38,84,91,101,207,228,233,238,246,255,309-314,337,345-354
+  7e4c879a89371397 69-83,85-87,214-215,258-264,266-269,271-274,315,355
+  9fcb925384ce0208 307-308 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0b3303d98c26b28df01573","tool_type":"agent","tool_id":"RunCommand","line_ranges":[{"Range":[307,308]}]}]}
+ChatKit/Sources/ChatUI/View/MessageList/MessageListView+Adapter.swift
+  2c9d41c6d14447ff 271
+  a5bc54e2cee7bb74 176,532
+OpenAva/Info.plist
+  af644fe631a568ea 53-54 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0b3dc6d98c26b28df0163a","tool_type":"agent","tool_id":"RunCommand","line_ranges":[{"Range":[53,54]}]}]}
+ChatKit/Sources/ChatUI/View/MessageList/MessageListView+DataSource.swift
+  a5bc54e2cee7bb74 357
+  7e4c879a89371397 360-388,399-400,406-408
+OpenAva/Features/Chat/ChatViewController.swift
+  af644fe631a568ea 306,876-897,900-901,904-917 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0b3dc6d98c26b28df0163a","tool_type":"agent","tool_id":"RunCommand","line_ranges":[{"Single":306},{"Range":[876,897]},{"Range":[900,901]},{"Range":[904,917]}]}]}
+  4070ae3c2c3da829 308-334 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0b40acd98c26b28df016bb","tool_type":"agent","tool_id":"SearchReplace","line_ranges":[{"Range":[308,334]}]}]}
+ChatKit/Sources/ChatUI/View/MessageList/MessageListRowView.swift
+  7e4c879a89371397 28-42,59-60,63-65,67-73,79,84-86,107,120-122,134-142,153-154
+  2c9d41c6d14447ff 109-111,143-149,151-152
+  f55e2ecdfc1e8dd3 61-62,66,108,150 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0b3403d98c26b28df015fb","tool_type":"agent","tool_id":"SearchReplace","line_ranges":[{"Range":[61,62]},{"Single":66},{"Single":108},{"Single":150}]}]}
+OpenAva/Features/Chat/ConversationShareImageRenderer.swift
+  2c9d41c6d14447ff 30-33,43,47,51-53,56-58,62,119-120,169,180,186-190,192-194,214,221,229,234,241,246,261-262,267-270,302-303,306,309-312,322-324,351,395-396
+  fd079cc123532a73 34-36,166,182-184,191,199-210,230,265-266,281,283,293-294,298,304-305,307-308,313-321,325-330,336-350,352,354-388
+  7e4c879a89371397 1-29,37-42,44-46,48-50,54-55,59-61,63-118,121-165,167-168,170-179,181,185,195-198,211-213,215-220,222-228,231-233,235-240,242-245,247-260,263-264,271-280,282,284-292,295-297,299-301,331-335,353,389-394,397-405
+OpenAva/Features/Chat/ChatViewControllerWrapper.swift
+  7e4c879a89371397 1041-1048
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "66aa7dc1922a3943e4741c997934c0a9ec550e94",
+  "prompts": {
+    "2c9d41c6d14447ff": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b2570d98c26b28df011d0",
+        "model": "gpt-5.5__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 95,
+      "overriden_lines": 0
+    },
+    "4070ae3c2c3da829": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b3f9ed98c26b28df01645",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 29,
+      "total_deletions": 6,
+      "accepted_lines": 28,
+      "overriden_lines": 0
+    },
+    "7e4c879a89371397": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0ab13bb7593628f33d9c85",
+        "model": "openrouter-2o__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 379,
+      "overriden_lines": 0
+    },
+    "9fcb925384ce0208": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b2f67d98c26b28df0143a",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 138,
+      "overriden_lines": 0
+    },
+    "a5bc54e2cee7bb74": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b2b95d98c26b28df01293",
+        "model": "gpt-5.5__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 46,
+      "overriden_lines": 0
+    },
+    "af644fe631a568ea": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b3388d98c26b28df015c1",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 51,
+      "total_deletions": 45,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    },
+    "f55e2ecdfc1e8dd3": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b32f2d98c26b28df01570",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 5,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "fd079cc123532a73": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b29d7d98c26b28df011f4",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 2010,
+      "overriden_lines": 0
+    }
+  },
+  "attestation_metadata": {
+    "ChatKit/Sources/ChatUI/View/MessageList/MessageListRowView.swift": [
+      {
+        "hash": "f55e2ecdfc1e8dd3",
+        "line_ranges": [
+          {
+            "Range": [
+              61,
+              62
+            ]
+          },
+          {
+            "Single": 66
+          },
+          {
+            "Single": 108
+          },
+          {
+            "Single": 150
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0b3403d98c26b28df015fb",
+            "tool_type": "agent",
+            "tool_id": "SearchReplace",
+            "line_ranges": [
+              {
+                "Range": [
+                  61,
+                  62
+                ]
+              },
+              {
+                "Single": 66
+              },
+              {
+                "Single": 108
+              },
+              {
+                "Single": 150
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "ChatKit/Sources/ChatUI/View/MessageList/MessageListView.swift": [
+      {
+        "hash": "9fcb925384ce0208",
+        "line_ranges": [
+          {
+            "Range": [
+              307,
+              308
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0b3303d98c26b28df01573",
+            "tool_type": "agent",
+            "tool_id": "RunCommand",
+            "line_ranges": [
+              {
+                "Range": [
+                  307,
+                  308
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "OpenAva/Features/Chat/ChatViewController.swift": [
+      {
+        "hash": "af644fe631a568ea",
+        "line_ranges": [
+          {
+            "Single": 306
+          },
+          {
+            "Range": [
+              876,
+              897
+            ]
+          },
+          {
+            "Range": [
+              900,
+              901
+            ]
+          },
+          {
+            "Range": [
+              904,
+              917
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0b3dc6d98c26b28df0163a",
+            "tool_type": "agent",
+            "tool_id": "RunCommand",
+            "line_ranges": [
+              {
+                "Single": 306
+              },
+              {
+                "Range": [
+                  876,
+                  897
+                ]
+              },
+              {
+                "Range": [
+                  900,
+                  901
+                ]
+              },
+              {
+                "Range": [
+                  904,
+                  917
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "4070ae3c2c3da829",
+        "line_ranges": [
+          {
+            "Range": [
+              308,
+              334
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0b40acd98c26b28df016bb",
+            "tool_type": "agent",
+            "tool_id": "SearchReplace",
+            "line_ranges": [
+              {
+                "Range": [
+                  308,
+                  334
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "OpenAva/Info.plist": [
+      {
+        "hash": "af644fe631a568ea",
+        "line_ranges": [
+          {
+            "Range": [
+              53,
+              54
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0b3dc6d98c26b28df0163a",
+            "tool_type": "agent",
+            "tool_id": "RunCommand",
+            "line_ranges": [
+              {
+                "Range": [
+                  53,
+                  54
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "4070ae3c2c3da829": {
+      "tool": "trae",
+      "conversation_id": "6a0b3f9ed98c26b28df01645",
+      "session_id": "6a0b3f9ed98c26b28df01645",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "9fcb925384ce0208": {
+      "tool": "trae",
+      "conversation_id": "6a0b2f67d98c26b28df0143a",
+      "session_id": "6a0b2f67d98c26b28df0143a",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "af644fe631a568ea": {
+      "tool": "trae",
+      "conversation_id": "6a0b3388d98c26b28df015c1",
+      "session_id": "6a0b3388d98c26b28df015c1",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "f55e2ecdfc1e8dd3": {
+      "tool": "trae",
+      "conversation_id": "6a0b32f2d98c26b28df01570",
+      "session_id": "6a0b32f2d98c26b28df01570",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
