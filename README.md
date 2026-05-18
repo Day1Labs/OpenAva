@@ -5,7 +5,7 @@
 <h1 align="center">OpenAva</h1>
 
 <p align="center">
-  <strong>A native Apple app for persistent personal AI agent teams.</strong>
+  <strong>Your Personal AI Agent Teams.</strong>
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 ## Preview
 
-https://github.com/user-attachments/assets/dfb1826b-bb7b-4b48-b066-24c28f9d5682
+[https://github.com/user-attachments/assets/dfb1826b-bb7b-4b48-b066-24c28f9d5682](https://github.com/user-attachments/assets/32d8827e-a685-4df2-8462-653c7cc9e911)
 
 ## Why OpenAva
 
