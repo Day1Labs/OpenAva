@@ -276,11 +276,32 @@ final class TeamRoomOrchestrator {
             agentNames: all.map(\.name),
             using: modelConfig
         )
-        guard !addressed.isEmpty else { return all }
+        return Self.resolveParticipants(addressedNames: addressed, all: all)
+    }
 
-        let lowercased = Set(addressed.map { $0.lowercased() })
-        let filtered = all.filter { lowercased.contains($0.name.lowercased()) }
-        return filtered.isEmpty ? all : filtered
+    static func resolveParticipants(addressedNames: [String], all: [AgentProfile]) -> [AgentProfile] {
+        guard !addressedNames.isEmpty else { return all }
+
+        var agentsByLowercasedName: [String: AgentProfile] = [:]
+        for agent in all {
+            let normalizedName = agent.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard !normalizedName.isEmpty, agentsByLowercasedName[normalizedName] == nil else {
+                continue
+            }
+            agentsByLowercasedName[normalizedName] = agent
+        }
+
+        var resolved: [AgentProfile] = []
+        var seenAgentIDs = Set<String>()
+        for name in addressedNames {
+            let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard let agent = agentsByLowercasedName[normalizedName], !seenAgentIDs.contains(agent.id) else {
+                continue
+            }
+            seenAgentIDs.insert(agent.id)
+            resolved.append(agent)
+        }
+        return resolved.isEmpty ? all : resolved
     }
 
     private func runAgentTurn(

@@ -13,12 +13,28 @@ final class TeamMentionResolverTests: XCTestCase {
         XCTAssertEqual(result, ["Jett"])
     }
 
-    func testParseAddressedIsCaseInsensitive() {
+    func testParseAddressedIsCaseInsensitiveAndReturnsCanonicalName() {
         let result = TeamMentionResolver.parseAddressed(
             from: #"{"addressed": ["jett"]}"#,
             agentNames: ["Jett", "Alice"]
         )
-        XCTAssertEqual(result, ["jett"])
+        XCTAssertEqual(result, ["Jett"])
+    }
+
+    func testParseAddressedPreservesResolverOrder() {
+        let result = TeamMentionResolver.parseAddressed(
+            from: #"{"addressed": ["Bob", "Jett", "Alice"]}"#,
+            agentNames: ["Jett", "Alice", "Bob"]
+        )
+        XCTAssertEqual(result, ["Bob", "Jett", "Alice"])
+    }
+
+    func testParseAddressedDeduplicatesNames() {
+        let result = TeamMentionResolver.parseAddressed(
+            from: #"{"addressed": ["Jett", "jett", "Alice"]}"#,
+            agentNames: ["Jett", "Alice"]
+        )
+        XCTAssertEqual(result, ["Jett", "Alice"])
     }
 
     func testParseAddressedEmptyArrayForBroadcast() {
@@ -37,12 +53,28 @@ final class TeamMentionResolverTests: XCTestCase {
         XCTAssertEqual(result, ["Jett"])
     }
 
-    func testParseAddressedHandlesMultipleAddressed() {
+    func testParseAddressedHandlesMultipleAddressedInResolverOrder() {
         let result = TeamMentionResolver.parseAddressed(
             from: #"{"addressed": ["Jett", "Alice"]}"#,
-            agentNames: ["Jett", "Alice", "Bob"]
+            agentNames: ["Alice", "Jett", "Bob"]
         )
-        XCTAssertEqual(Set(result), Set(["Jett", "Alice"]))
+        XCTAssertEqual(result, ["Jett", "Alice"])
+    }
+
+    func testParseAddressedCanRepresentNamedFirstThenOthers() {
+        let result = TeamMentionResolver.parseAddressed(
+            from: #"{"addressed": ["Sam Altman", "Alice", "Bob"]}"#,
+            agentNames: ["Alice", "Sam Altman", "Bob"]
+        )
+        XCTAssertEqual(result, ["Sam Altman", "Alice", "Bob"])
+    }
+
+    func testParseAddressedCanRepresentEveryoneExceptOneAgent() {
+        let result = TeamMentionResolver.parseAddressed(
+            from: #"{"addressed": ["Sam Altman", "Bob"]}"#,
+            agentNames: ["Sam Altman", "Alice", "Bob"]
+        )
+        XCTAssertEqual(result, ["Sam Altman", "Bob"])
     }
 
     func testParseAddressedToleratesWrappingText() {

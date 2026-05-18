@@ -24,6 +24,55 @@ final class TeamRoomOrchestratorTests: XCTestCase {
         XCTAssertFalse(participants.contains(second))
     }
 
+    func testResolveParticipantsFromAddressedNamesPreservesResolverOrder() {
+        let first = makeAgent(name: "First", emoji: "1")
+        let second = makeAgent(name: "Second", emoji: "2")
+        let third = makeAgent(name: "Third", emoji: "3")
+
+        let participants = TeamRoomOrchestrator.resolveParticipants(
+            addressedNames: ["Third", "First"],
+            all: [first, second, third]
+        )
+
+        XCTAssertEqual(participants.map(\.id), [third.id, first.id])
+    }
+
+    func testResolveParticipantsFromEmptyAddressedNamesBroadcastsInRoomOrder() {
+        let first = makeAgent(name: "First", emoji: "1")
+        let second = makeAgent(name: "Second", emoji: "2")
+
+        let participants = TeamRoomOrchestrator.resolveParticipants(
+            addressedNames: [],
+            all: [first, second]
+        )
+
+        XCTAssertEqual(participants.map(\.id), [first.id, second.id])
+    }
+
+    func testResolveParticipantsFromAddressedNamesFiltersUnknownAndDeduplicates() {
+        let first = makeAgent(name: "First", emoji: "1")
+        let second = makeAgent(name: "Second", emoji: "2")
+
+        let participants = TeamRoomOrchestrator.resolveParticipants(
+            addressedNames: ["Ghost", "Second", "second"],
+            all: [first, second]
+        )
+
+        XCTAssertEqual(participants.map(\.id), [second.id])
+    }
+
+    func testResolveParticipantsFromOnlyUnknownAddressedNamesFallsBackToBroadcast() {
+        let first = makeAgent(name: "First", emoji: "1")
+        let second = makeAgent(name: "Second", emoji: "2")
+
+        let participants = TeamRoomOrchestrator.resolveParticipants(
+            addressedNames: ["Ghost"],
+            all: [first, second]
+        )
+
+        XCTAssertEqual(participants.map(\.id), [first.id, second.id])
+    }
+
     func testAppendAgentReplyWritesVisibleAgentMetadataToRoomTranscript() {
         let storage = DisposableStorageProvider()
         let session = ConversationSession(
