@@ -293,8 +293,94 @@ open class ChatViewController: UIViewController {
     private var draftInputObject: ChatInputContent?
     private var providedSession: ConversationSession?
     var promptSubmissionHandler: ConversationPromptSubmissionHandler?
+    private var isShareSelectionModeEnabled = false
+    private let shareSelectionToolbarHeight: CGFloat = 80
 
     private lazy var titleBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: self, action: #selector(handleTitleTap))
+
+    private lazy var shareSelectionToolbar: UIView = {
+        let container = UIView()
+        container.isHidden = true
+        container.backgroundColor = ChatUIDesign.Color.warmCream
+        container.layer.borderColor = ChatUIDesign.Color.oatBorder.cgColor
+        container.layer.borderWidth = 1
+        container.layer.cornerRadius = ChatUIDesign.Radius.card
+        container.layer.cornerCurve = .continuous
+
+        let cancelButton = UIButton(type: .system)
+        if #available(iOS 15.0, *) {
+            var configuration = UIButton.Configuration.plain()
+            configuration.baseForegroundColor = ChatUIDesign.Color.black60
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4)
+            cancelButton.configuration = configuration
+        }
+        cancelButton.setTitle(String.localized("Cancel"), for: .normal)
+        cancelButton.setTitleColor(ChatUIDesign.Color.black60, for: .normal)
+        cancelButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular)
+        cancelButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        cancelButton.addTarget(self, action: #selector(cancelShareSelection), for: .touchUpInside)
+
+        let selectAllButton = UIButton(type: .system)
+        if #available(iOS 15.0, *) {
+            var configuration = UIButton.Configuration.plain()
+            configuration.baseForegroundColor = ChatUIDesign.Color.offBlack
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4)
+            selectAllButton.configuration = configuration
+        }
+        selectAllButton.setTitle(String.localized("Select All"), for: .normal)
+        selectAllButton.setTitleColor(ChatUIDesign.Color.offBlack, for: .normal)
+        selectAllButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular)
+        selectAllButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        selectAllButton.addTarget(self, action: #selector(selectAllShareMessages), for: .touchUpInside)
+
+        shareSelectionCountLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        shareSelectionCountLabel.textAlignment = .center
+        shareSelectionCountLabel.textColor = ChatUIDesign.Color.black60
+        shareSelectionCountLabel.setContentHuggingPriority(.required, for: .horizontal)
+        shareSelectionCountLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+
+        shareSelectionActionButton.setTitle(String.localized("Generate Image"), for: .normal)
+        shareSelectionActionButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular)
+        shareSelectionActionButton.backgroundColor = ChatUIDesign.Color.black60.withAlphaComponent(0.18)
+        shareSelectionActionButton.setTitleColor(ChatUIDesign.Color.pureWhite, for: .normal)
+        shareSelectionActionButton.setTitleColor(ChatUIDesign.Color.black60, for: .disabled)
+        shareSelectionActionButton.layer.cornerRadius = ChatUIDesign.Radius.button
+        shareSelectionActionButton.layer.cornerCurve = .continuous
+        shareSelectionActionButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)
+        shareSelectionActionButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        shareSelectionActionButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 36).isActive = true
+        shareSelectionActionButton.addTarget(self, action: #selector(generateShareImageFromSelection), for: .touchUpInside)
+
+        let spacerView = UIView()
+        spacerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacerView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let mainStack = UIStackView(arrangedSubviews: [
+            cancelButton,
+            selectAllButton,
+            spacerView,
+            shareSelectionCountLabel,
+            shareSelectionActionButton,
+        ])
+        mainStack.axis = .horizontal
+        mainStack.spacing = 12
+        mainStack.distribution = .fill
+        mainStack.alignment = .center
+        mainStack.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(mainStack)
+
+        NSLayoutConstraint.activate([
+            mainStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            mainStack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            mainStack.topAnchor.constraint(equalTo: container.topAnchor),
+            mainStack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        return container
+    }()
+
+    private let shareSelectionCountLabel = UILabel()
+    private let shareSelectionActionButton = UIButton(type: .custom)
 
     private let titleAvatarImageView: UIImageView = {
         let view = UIImageView()
@@ -479,6 +565,7 @@ open class ChatViewController: UIViewController {
 
         view.addSubview(messageListView)
         view.addSubview(chatInputView)
+        view.addSubview(shareSelectionToolbar)
         messageListView.addGestureRecognizer(dismissKeyboardTapGesture)
         messageListView.theme = configuration.messageTheme
         applyEmptyStateContent()
@@ -513,7 +600,7 @@ open class ChatViewController: UIViewController {
         guard view.bounds.width > 0, view.bounds.height > 0 else { return }
 
         let safeArea = view.safeAreaInsets
-        let inputHeight = chatInputView.heightPublisher.value
+        let inputHeight = isShareSelectionModeEnabled ? shareSelectionToolbarHeight : chatInputView.heightPublisher.value
         let bottomPadding = max(safeArea.bottom, 0)
         let idleBottomSpacingReduction = keyboardHeight == 0 ? min(chatInputView.idleBottomSpacingReduction, bottomPadding) : 0
         let inputExtension = bottomPadding - idleBottomSpacingReduction
@@ -590,12 +677,24 @@ open class ChatViewController: UIViewController {
         }
 
         let inputY = chatColumn.maxY - totalInputHeight - keyboardHeight
-        chatInputView.frame = CGRect(
+        let inputFrame = CGRect(
             x: chatColumn.minX,
             y: max(inputY, chatColumn.minY + safeArea.top),
             width: chatColumn.width,
             height: totalInputHeight
         )
+        chatInputView.frame = inputFrame
+        if isShareSelectionModeEnabled {
+            let pillHeight: CGFloat = 64
+            let pillWidth: CGFloat = min(480, chatColumn.width - 24)
+            let pillX = chatColumn.minX + (chatColumn.width - pillWidth) / 2
+            let pillY = chatColumn.maxY - safeArea.bottom - pillHeight - 16
+            shareSelectionToolbar.frame = CGRect(x: pillX, y: pillY, width: pillWidth, height: pillHeight)
+        } else {
+            shareSelectionToolbar.frame = inputFrame
+        }
+        chatInputView.isHidden = isShareSelectionModeEnabled
+        shareSelectionToolbar.isHidden = !isShareSelectionModeEnabled
 
         let listTop: CGFloat
         if embeddedWebHostView != nil, chatColumn.minY > 0 {
@@ -642,6 +741,164 @@ open class ChatViewController: UIViewController {
 
     @objc private func handleBackgroundTapToDismiss() {
         view.endEditing(true)
+    }
+
+    @MainActor
+    public func beginShareSelectionMode() {
+        guard let session = currentSession else { return }
+        let hasShareableMessages = session.messages.contains { message in
+            shareableText(for: message) != nil
+        }
+        guard hasShareableMessages else {
+            presentShareError(message: String.localized("No messages to share."))
+            return
+        }
+
+        isShareSelectionModeEnabled = true
+        view.endEditing(true)
+        messageListView.isSelectionModeEnabled = true
+        updateShareSelectionToolbar(selectedCount: messageListView.selectedMessageIDs.count)
+        configureNavigationItems()
+        UIView.animate(withDuration: 0.2) {
+            self.layoutViews()
+        }
+    }
+
+    @objc private func cancelShareSelection() {
+        endShareSelectionMode()
+    }
+
+    private func endShareSelectionMode() {
+        isShareSelectionModeEnabled = false
+        messageListView.isSelectionModeEnabled = false
+        updateShareSelectionToolbar(selectedCount: 0)
+        configureNavigationItems()
+        UIView.animate(withDuration: 0.2) {
+            self.layoutViews()
+        }
+    }
+
+    @objc private func selectAllShareMessages() {
+        messageListView.selectAllVisibleMessages()
+    }
+
+    @objc private func generateShareImageFromSelection() {
+        guard let session = currentSession else { return }
+        let selectedIDs = messageListView.selectedMessageIDs
+        let selectedMessages = session.messages.filter { selectedIDs.contains($0.id) && shareableText(for: $0) != nil }
+        guard !selectedMessages.isEmpty else {
+            presentShareError(message: String.localized("Select at least one message."))
+            return
+        }
+
+        do {
+            let renderer = ConversationShareImageRenderer(
+                title: resolvedHeaderTitleText(),
+                subtitle: headerState.teamMemberCount == nil ? nil : String.localized("Group chat")
+            )
+            let image = try renderer.render(messages: selectedMessages)
+            let previewController = ConversationSharePreviewController(image: image) { [weak self] image, sourceView in
+                self?.saveShareImage(image: image, sourceView: sourceView)
+            }
+            let navigationController = UINavigationController(rootViewController: previewController)
+            navigationController.modalPresentationStyle = .formSheet
+            navigationController.preferredContentSize = CGSize(width: 520, height: 720)
+            present(navigationController, animated: true)
+        } catch {
+            presentShareError(message: error.localizedDescription)
+        }
+    }
+
+    private func updateShareSelectionToolbar(selectedCount: Int) {
+        shareSelectionCountLabel.text = String(format: String.localized("%lld selected"), locale: .current, Int64(selectedCount))
+        shareSelectionActionButton.isEnabled = selectedCount > 0
+        shareSelectionActionButton.backgroundColor = selectedCount > 0
+            ? ChatUIDesign.Color.offBlack
+            : ChatUIDesign.Color.black60.withAlphaComponent(0.18)
+    }
+
+    private func saveShareImage(image: UIImage, sourceView: UIView) {
+        #if targetEnvironment(macCatalyst)
+        if let workspace = ProjectWorkspaceStore.load().activeWorkspace {
+            let url = ProjectWorkspaceStore.resolvedURL(for: workspace).appendingPathComponent("openava-chat-\(UUID().uuidString).png")
+            if let data = image.pngData() {
+                do {
+                    try data.write(to: url, options: [.atomic])
+                    
+                    let alert = UIAlertController(
+                        title: String.localized("Saved Successfully"),
+                        message: String(format: String.localized("Image saved to %@"), url.lastPathComponent),
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: String.localized("Show in Finder"), style: .default) { _ in
+                        UIApplication.shared.open(url.deletingLastPathComponent())
+                    })
+                    alert.addAction(UIAlertAction(title: String.localized("OK"), style: .cancel))
+                    
+                    let presenting = presentedViewController ?? self
+                    presenting.dismiss(animated: true) { [weak self] in
+                        self?.present(alert, animated: true)
+                        self?.endShareSelectionMode()
+                    }
+                } catch {
+                    presentShareError(message: error.localizedDescription)
+                }
+            }
+        } else {
+            presentShareError(message: String.localized("No active workspace found."))
+        }
+        #else
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        
+        let alert = UIAlertController(
+            title: String.localized("Saved Successfully"),
+            message: String.localized("Saved to Photos"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String.localized("OK"), style: .cancel))
+        
+        let presenting = presentedViewController ?? self
+        presenting.dismiss(animated: true) { [weak self] in
+            self?.present(alert, animated: true)
+            self?.endShareSelectionMode()
+        }
+        #endif
+    }
+
+    private func presentShareError(message: String) {
+        let alert = UIAlertController(
+            title: String.localized("Share Conversation"),
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String.localized("OK"), style: .default))
+        present(alert, animated: true)
+    }
+
+    private func shareableText(for message: ConversationMessage) -> String? {
+        let text = message.textContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty {
+            return text
+        }
+        if let reasoning = message.reasoningContent?.trimmingCharacters(in: .whitespacesAndNewlines), !reasoning.isEmpty {
+            return reasoning
+        }
+        let attachmentNames = message.parts.compactMap { part -> String? in
+            switch part {
+            case let .image(image):
+                return image.name ?? String.localized("Image")
+            case let .audio(audio):
+                return audio.name ?? String.localized("Audio")
+            case let .file(file):
+                return file.name ?? String.localized("Document")
+            case .text, .reasoning, .toolCall, .toolResult:
+                return nil
+            }
+        }
+        if !attachmentNames.isEmpty {
+            return attachmentNames.joined(separator: "\n")
+        }
+        return nil
     }
 
     @objc private func handleSplitterPan(_ recognizer: UIPanGestureRecognizer) {
@@ -951,6 +1208,9 @@ open class ChatViewController: UIViewController {
         }
         messageListView.onOpenAttachment = { [weak self] attachment in
             self?.openMessageAttachmentPreview(attachment) ?? false
+        }
+        messageListView.onSelectionChange = { [weak self] selectedIDs in
+            self?.updateShareSelectionToolbar(selectedCount: selectedIDs.count)
         }
         messageListView.onPartialCompact = { [weak self] messageID, direction in
             guard let self else { return }
