@@ -10,37 +10,8 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-#if targetEnvironment(macCatalyst)
-    import AppKit
-#endif
-
-enum CatalystGlobalCommand: String {
-    case openModelSettings
-    case focusInput
-}
-
 extension Notification.Name {
-    static let openAvaCatalystGlobalCommand = Notification.Name("openAva.catalyst.globalCommand")
     static let openAvaDidTapPrincipalTitle = Notification.Name("openAva.didTapPrincipalTitle")
-}
-
-enum CatalystGlobalCommandCenter {
-    static func post(_ command: CatalystGlobalCommand) {
-        NotificationCenter.default.post(
-            name: .openAvaCatalystGlobalCommand,
-            object: nil,
-            userInfo: ["command": command.rawValue]
-        )
-    }
-
-    static func resolve(_ notification: Notification) -> CatalystGlobalCommand? {
-        guard let rawValue = notification.userInfo?["command"] as? String,
-              let command = CatalystGlobalCommand(rawValue: rawValue)
-        else {
-            return nil
-        }
-        return command
-    }
 }
 
 @main
@@ -183,52 +154,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         // window chrome alive while the hosted content renders as a blank white area.
     }
 
-    extension AppDelegate {
-        override func buildMenu(with builder: UIMenuBuilder) {
-            super.buildMenu(with: builder)
-            guard builder.system == .main else { return }
-
-            builder.insertSibling(
-                UIMenu(
-                    title: "",
-                    options: .displayInline,
-                    children: [
-                        UIKeyCommand(
-                            title: L10n.tr("settings.llm.navigationTitle"),
-                            action: #selector(handleOpenModelSettingsFromMenu(_:)),
-                            input: ",",
-                            modifierFlags: .command
-                        ),
-                    ]
-                ),
-                afterMenu: .preferences
-            )
-
-            builder.insertChild(
-                UIMenu(
-                    title: "",
-                    options: .displayInline,
-                    children: [
-                        UIKeyCommand(
-                            title: L10n.tr("chat.command.focusInput"),
-                            action: #selector(handleFocusInputFromMenu(_:)),
-                            input: "l",
-                            modifierFlags: .command
-                        ),
-                    ]
-                ),
-                atStartOfMenu: .view
-            )
-        }
-
-        @objc private func handleOpenModelSettingsFromMenu(_: Any?) {
-            CatalystGlobalCommandCenter.post(.openModelSettings)
-        }
-
-        @objc private func handleFocusInputFromMenu(_: Any?) {
-            CatalystGlobalCommandCenter.post(.focusInput)
-        }
-    }
 #endif
 
 // MARK: - Shake to Toggle DebugSwift

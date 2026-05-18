@@ -55,6 +55,7 @@ struct ChatRootView: View {
     /// Pending message from an App Intent, consumed once by ChatViewControllerWrapper.
     @State private var pendingAutoSendID: String? = nil
     @State private var pendingAutoSendMessage: String? = nil
+    @State private var focusInputRequestID: UUID?
 
     private enum MenuDestination: Hashable {
         case llm
@@ -136,6 +137,7 @@ struct ChatRootView: View {
             Text(workspaceErrorMessage ?? "")
         }
         .onAppear {
+            markCatalystSceneActive()
             normalizeSessionContextForVisibleMenu()
             autoCompactEnabled = containerStore.activeAutoCompactEnabled
             RemoteControlCoordinator.shared.bind(containerStore: containerStore)
@@ -145,6 +147,7 @@ struct ChatRootView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                markCatalystSceneActive()
                 drainPendingAutoSend()
             }
             updateHeartbeatService()
@@ -152,6 +155,11 @@ struct ChatRootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .OpenAvaIntentAutoSend)) { _ in
             drainPendingAutoSend()
         }
+        #if targetEnvironment(macCatalyst)
+        .onReceive(NotificationCenter.default.publisher(for: .openAvaCatalystGlobalCommand)) { notification in
+            handleCatalystGlobalCommand(notification)
+        }
+        #endif
         .onChange(of: containerStore.agents) { _, _ in
             normalizeSessionContextForVisibleMenu()
             updateHeartbeatService()
@@ -226,6 +234,7 @@ struct ChatRootView: View {
             pendingAutoSendID: pendingAutoSendID,
             pendingAutoSendMessage: pendingAutoSendMessage,
             onConsumePendingAutoSend: consumePendingAutoSend,
+            focusInputRequestID: focusInputRequestID,
             onMenuAction: handleMenuAction,
             onSessionSwitch: handleSessionSwitch,
             onModelSwitch: handleModelSwitch,
@@ -323,8 +332,37 @@ struct ChatRootView: View {
         containerStore.selectThinkingStrength(thinkingStrength)
     }
 
+    private func handleCatalystGlobalCommand(_ notification: Notification) {
+        #if targetEnvironment(macCatalyst)
+            guard CatalystGlobalCommandCenter.targetsScene(sceneID, notification: notification),
+                  let command = CatalystGlobalCommandCenter.resolve(notification)
+            else {
+                return
+            }
+
+            switch command {
+            case .openModelSettings:
+                handleMenuAction(.openLLM)
+            case .focusInput:
+                focusInputRequestID = UUID()
+            case .openWorkspace:
+                openWorkspaceImporterFromSystemMenu()
+            case .openRecentWorkspace:
+                guard let workspaceID = CatalystGlobalCommandCenter.workspaceID(from: notification) else { return }
+                handleWorkspaceSwitch(workspaceID)
+            }
+        #endif
+    }
+
+    private func markCatalystSceneActive() {
+        #if targetEnvironment(macCatalyst)
+            CatalystGlobalCommandCenter.markActive(sceneID: sceneID)
+        #endif
+    }
+
     private func handleWorkspaceSwitch(_ workspaceID: UUID) {
-        _ = containerStore.switchProjectWorkspace(workspaceID)
+        guard containerStore.switchProjectWorkspace(workspaceID) else { return }
+        rebuildCatalystMainMenu()
     }
 
     private func openActiveWorkspaceDirectory() {
@@ -353,6 +391,31 @@ struct ChatRootView: View {
         showsWorkspaceImporter = true
     }
 
+    private func openWorkspaceImporterFromSystemMenu() {
+        #if targetEnvironment(macCatalyst)
+            DispatchQueue.main.async {
+                openWorkspaceImporter(catalystTopViewControllerForPresentation())
+            }
+        #else
+            openWorkspaceImporter()
+        #endif
+    }
+
+    #if targetEnvironment(macCatalyst)
+        private func catalystTopViewControllerForPresentation() -> UIViewController? {
+            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            let windows = scenes.flatMap(\.windows)
+            guard var presenter = (windows.first { $0.isKeyWindow } ?? windows.first { !$0.isHidden })?.rootViewController else {
+                return nil
+            }
+
+            while let presented = presenter.presentedViewController {
+                presenter = presented
+            }
+            return presenter
+        }
+    #endif
+
     private func openWorkspaceCreation() {
         newWorkspaceName = containerStore.activeProjectWorkspace?.resolvedName ?? "OpenAva"
         showsCreateWorkspaceAlert = true
@@ -376,6 +439,7 @@ struct ChatRootView: View {
         do {
             guard let url = try result.get().first else { return }
             _ = try containerStore.importProjectWorkspace(at: url)
+            rebuildCatalystMainMenu()
         } catch {
             workspaceErrorMessage = error.localizedDescription
         }
@@ -386,9 +450,16 @@ struct ChatRootView: View {
             guard let parentURL = try result.get().first else { return }
             let name = newWorkspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
             _ = try containerStore.createProjectWorkspace(named: name.isEmpty ? "OpenAva" : name, inParentDirectory: parentURL)
+            rebuildCatalystMainMenu()
         } catch {
             workspaceErrorMessage = error.localizedDescription
         }
+    }
+
+    private func rebuildCatalystMainMenu() {
+        #if targetEnvironment(macCatalyst)
+            UIMenuSystem.main.setNeedsRebuild()
+        #endif
     }
 
     private func handleDeleteCurrentAgent() {
@@ -621,6 +692,7 @@ private struct ChatScreen: View {
     let pendingAutoSendID: String?
     let pendingAutoSendMessage: String?
     let onConsumePendingAutoSend: ((String) -> Void)?
+    let focusInputRequestID: UUID?
     let onMenuAction: ((ChatViewControllerWrapper.MenuAction) -> Void)?
     let onSessionSwitch: ((ActiveSessionContext) -> Void)?
     let onModelSwitch: ((String) -> Void)?
@@ -1050,6 +1122,7 @@ private struct ChatScreen: View {
             pendingAutoSendID: pendingAutoSendID,
             pendingAutoSendMessage: pendingAutoSendMessage,
             onConsumePendingAutoSend: onConsumePendingAutoSend,
+            focusInputRequestID: focusInputRequestID,
             onMenuAction: onMenuAction,
             onSessionSwitch: onSessionSwitch,
             onModelSwitch: onModelSwitch,

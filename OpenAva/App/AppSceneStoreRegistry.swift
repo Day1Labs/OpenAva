@@ -1,6 +1,5 @@
 import Foundation
 
-@MainActor
 /// Maps auxiliary Catalyst windows back to the main window that opened them.
 ///
 /// Each main window owns its own `AppContainerStore`, and that store owns the
@@ -8,6 +7,7 @@ import Foundation
 /// agent creation do not inherit the opener's SwiftUI environment, so they pass
 /// a scene-scoped identifier through `openWindow` and resolve the matching
 /// store here. The scene ID is a UI/window instance key, not a workspace ID.
+@MainActor
 final class AppSceneStoreRegistry {
     static let shared = AppSceneStoreRegistry()
 
