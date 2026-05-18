@@ -316,12 +316,12 @@ open class ChatViewController: UIViewController {
             effectView.clipsToBounds = true
             effectView.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(effectView)
-            
+
             NSLayoutConstraint.activate([
                 effectView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
                 effectView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
                 effectView.topAnchor.constraint(equalTo: container.topAnchor),
-                effectView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+                effectView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             ])
 
             container.backgroundColor = .clear
@@ -332,7 +332,6 @@ open class ChatViewController: UIViewController {
             container.layer.shadowRadius = 12
             container.layer.shadowOffset = CGSize(width: 0, height: 4)
         }
-
 
         let cancelButton = UIButton(type: .system)
         if #available(iOS 15.0, *) {
