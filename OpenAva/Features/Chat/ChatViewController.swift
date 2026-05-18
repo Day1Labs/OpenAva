@@ -301,11 +301,38 @@ open class ChatViewController: UIViewController {
     private lazy var shareSelectionToolbar: UIView = {
         let container = UIView()
         container.isHidden = true
-        container.backgroundColor = ChatUIDesign.Color.warmCream
         container.layer.borderColor = ChatUIDesign.Color.oatBorder.cgColor
         container.layer.borderWidth = 1
-        container.layer.cornerRadius = ChatUIDesign.Radius.card
+        container.layer.cornerRadius = 24
         container.layer.cornerCurve = .continuous
+        container.clipsToBounds = false
+
+        if #available(iOS 26, *) {
+            let glass = UIGlassEffect()
+            glass.isInteractive = true
+            let effectView = UIVisualEffectView(effect: glass)
+            effectView.layer.cornerRadius = 24
+            effectView.layer.cornerCurve = .continuous
+            effectView.clipsToBounds = true
+            effectView.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(effectView)
+            
+            NSLayoutConstraint.activate([
+                effectView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                effectView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                effectView.topAnchor.constraint(equalTo: container.topAnchor),
+                effectView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            ])
+
+            container.backgroundColor = .clear
+        } else {
+            container.backgroundColor = ChatUIDesign.Color.warmCream
+            container.layer.shadowColor = UIColor.black.cgColor
+            container.layer.shadowOpacity = 0.08
+            container.layer.shadowRadius = 12
+            container.layer.shadowOffset = CGSize(width: 0, height: 4)
+        }
+
 
         let cancelButton = UIButton(type: .system)
         if #available(iOS 15.0, *) {
@@ -685,12 +712,12 @@ open class ChatViewController: UIViewController {
         )
         if isShareSelectionModeEnabled {
             let pillHeight: CGFloat = 64
-            let pillWidth: CGFloat = min(480, chatColumn.width - 24)
-            let pillX = chatColumn.minX + (chatColumn.width - pillWidth) / 2
+            let pillWidth: CGFloat = chatColumn.width - 32
+            let pillX = chatColumn.minX + 16
             let pillY = chatColumn.maxY - safeArea.bottom - pillHeight - 16
             shareSelectionToolbar.frame = CGRect(x: pillX, y: pillY, width: pillWidth, height: pillHeight)
             shareSelectionToolbar.alpha = 1
-            
+
             chatInputView.frame = CGRect(
                 x: inputFrame.minX,
                 y: chatColumn.maxY,
@@ -700,12 +727,12 @@ open class ChatViewController: UIViewController {
             chatInputView.alpha = 0
         } else {
             let pillHeight: CGFloat = 64
-            let pillWidth: CGFloat = min(480, chatColumn.width - 24)
-            let pillX = chatColumn.minX + (chatColumn.width - pillWidth) / 2
+            let pillWidth: CGFloat = chatColumn.width - 32
+            let pillX = chatColumn.minX + 16
             let hiddenPillY = chatColumn.maxY
             shareSelectionToolbar.frame = CGRect(x: pillX, y: hiddenPillY, width: pillWidth, height: pillHeight)
             shareSelectionToolbar.alpha = 0
-            
+
             chatInputView.frame = inputFrame
             chatInputView.alpha = 1
         }
@@ -773,7 +800,7 @@ open class ChatViewController: UIViewController {
         messageListView.isSelectionModeEnabled = true
         updateShareSelectionToolbar(selectedCount: messageListView.selectedMessageIDs.count)
         configureNavigationItems()
-        
+
         shareSelectionToolbar.isHidden = false
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
             self.layoutViews()
@@ -793,7 +820,7 @@ open class ChatViewController: UIViewController {
         messageListView.isSelectionModeEnabled = false
         updateShareSelectionToolbar(selectedCount: 0)
         configureNavigationItems()
-        
+
         chatInputView.isHidden = false
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
             self.layoutViews()
@@ -843,51 +870,51 @@ open class ChatViewController: UIViewController {
             : ChatUIDesign.Color.black60.withAlphaComponent(0.18)
     }
 
-    private func saveShareImage(image: UIImage, sourceView: UIView) {
+    private func saveShareImage(image: UIImage, sourceView _: UIView) {
         #if targetEnvironment(macCatalyst)
-        if let workspace = ProjectWorkspaceStore.load().activeWorkspace {
-            let url = ProjectWorkspaceStore.resolvedURL(for: workspace).appendingPathComponent("openava-chat-\(UUID().uuidString).png")
-            if let data = image.pngData() {
-                do {
-                    try data.write(to: url, options: [.atomic])
-                    
-                    let alert = UIAlertController(
-                        title: String.localized("Saved Successfully"),
-                        message: String(format: String.localized("Image saved to %@"), url.lastPathComponent),
-                        preferredStyle: .alert
-                    )
-                    alert.addAction(UIAlertAction(title: String.localized("Show in Finder"), style: .default) { _ in
-                        UIApplication.shared.open(url.deletingLastPathComponent())
-                    })
-                    alert.addAction(UIAlertAction(title: String.localized("OK"), style: .cancel))
-                    
-                    let presenting = presentedViewController ?? self
-                    presenting.dismiss(animated: true) { [weak self] in
-                        self?.present(alert, animated: true)
-                        self?.endShareSelectionMode()
+            if let workspace = ProjectWorkspaceStore.load().activeWorkspace {
+                let url = ProjectWorkspaceStore.resolvedURL(for: workspace).appendingPathComponent("openava-chat-\(UUID().uuidString).png")
+                if let data = image.pngData() {
+                    do {
+                        try data.write(to: url, options: [.atomic])
+
+                        let alert = UIAlertController(
+                            title: String.localized("Saved Successfully"),
+                            message: String(format: String.localized("Image saved to %@"), url.lastPathComponent),
+                            preferredStyle: .alert
+                        )
+                        alert.addAction(UIAlertAction(title: String.localized("Show in Finder"), style: .default) { _ in
+                            UIApplication.shared.open(url.deletingLastPathComponent())
+                        })
+                        alert.addAction(UIAlertAction(title: String.localized("OK"), style: .cancel))
+
+                        let presenting = presentedViewController ?? self
+                        presenting.dismiss(animated: true) { [weak self] in
+                            self?.present(alert, animated: true)
+                            self?.endShareSelectionMode()
+                        }
+                    } catch {
+                        presentShareError(message: error.localizedDescription)
                     }
-                } catch {
-                    presentShareError(message: error.localizedDescription)
                 }
+            } else {
+                presentShareError(message: String.localized("No active workspace found."))
             }
-        } else {
-            presentShareError(message: String.localized("No active workspace found."))
-        }
         #else
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-        
-        let alert = UIAlertController(
-            title: String.localized("Saved Successfully"),
-            message: String.localized("Saved to Photos"),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: String.localized("OK"), style: .cancel))
-        
-        let presenting = presentedViewController ?? self
-        presenting.dismiss(animated: true) { [weak self] in
-            self?.present(alert, animated: true)
-            self?.endShareSelectionMode()
-        }
+            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+
+            let alert = UIAlertController(
+                title: String.localized("Saved Successfully"),
+                message: String.localized("Saved to Photos"),
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: String.localized("OK"), style: .cancel))
+
+            let presenting = presentedViewController ?? self
+            presenting.dismiss(animated: true) { [weak self] in
+                self?.present(alert, animated: true)
+                self?.endShareSelectionMode()
+            }
         #endif
     }
 

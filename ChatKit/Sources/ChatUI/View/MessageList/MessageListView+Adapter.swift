@@ -173,7 +173,7 @@ extension MessageListView: ListViewAdapter {
 
                 if message.isRevealed {
                     let availableWidth = max(0, availableContentWidth - 38)
-                    let cacheKey = NSString(string: "reasoning-\(message.id)|\(Int(availableWidth.rounded()))")
+                    let cacheKey = NSString(string: "reasoning-\(message.id)|\(message.content.hashValue)|\(Int(availableWidth.rounded()))")
 
                     let textHeight: CGFloat
                     if let cached = userContentHeightCache.object(forKey: cacheKey) {
@@ -268,7 +268,7 @@ extension MessageListView: ListViewAdapter {
     public func listView(_: ListView, configureRowView rowView: ListRowView, for _: any Identifiable, at index: Int) {
         guard let entry = entryForRow(at: index) else { return }
         if let messageRowView = rowView as? MessageListRowView {
-            messageRowView.contentLeadingInset = entryLeadingInsets[entry.id] ?? 0
+            configureSelectionState(for: messageRowView, entry: entry)
         }
 
         if let userMessageView = rowView as? UserMessageView {
@@ -529,7 +529,7 @@ extension MessageListView: ListViewAdapter {
         textWidth: CGFloat,
         theme: MarkdownTheme
     ) -> ToolResultSectionMetrics {
-        let cacheKey = NSString(string: "\(entryID)|\(title)|\(Int(textWidth.rounded()))")
+        let cacheKey = NSString(string: "\(entryID)|\(title)|\(content.hashValue)|\(Int(textWidth.rounded()))")
         if let cached = toolResultSectionMetricsCache.object(forKey: cacheKey) {
             let size = cached.cgSizeValue
             return .init(titleHeight: size.width, codeHeight: size.height)

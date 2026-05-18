@@ -1038,7 +1038,14 @@ extension ChatViewControllerWrapper {
                     }
                 )
             }
-            return UIMenu(children: menus)
+            let shareAction = UIAction(
+                title: String.localized("Share Conversation"),
+                image: UIImage(systemName: "square.and.arrow.up")
+            ) { [weak controller] _ in
+                controller?.beginShareSelectionMode()
+            }
+            let shareSection = UIMenu(options: .displayInline, children: [shareAction])
+            return UIMenu(children: [shareSection] + menus)
         }
 
         private func presentDeleteCurrentAgentAlert(from controller: ChatViewController) {

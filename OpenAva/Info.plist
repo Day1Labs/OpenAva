@@ -50,6 +50,8 @@
 	<string>OpenAva uses motion access to run local motion tools for your agent.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>OpenAva uses photo library access to run local media tools for your agent.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>OpenAva uses photo library access to save generated images and content.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>OpenAva needs reminders access to list and create reminders for local reminder tools.</string>
 	<key>NSRemindersUsageDescription</key>

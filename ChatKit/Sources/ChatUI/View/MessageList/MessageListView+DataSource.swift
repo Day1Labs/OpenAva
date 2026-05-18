@@ -354,7 +354,38 @@ extension MessageListView {
             case let .todoList(id, _): "todo-list-\(id)"
             case let .subAgentTask(id, _): "sub-agent-task-\(id)"
             case .interruptionRetry: "interruption-retry"
-            case let .activityReporting(msg): "activity-\(msg)"
+            case .activityReporting: "activity"
+            }
+        }
+
+        var selectableMessageID: String? {
+            return switch self {
+            case let .userContent(_, message),
+                 let .reasoningContent(_, message),
+                 let .responseContent(_, message):
+                message.messageID
+            case let .userAttachment(id, _):
+                id
+            case let .mediaContent(_, media):
+                media.messageID
+            case let .chartContent(_, chart):
+                chart.messageID
+            case let .mapContent(_, map):
+                map.messageID
+            case let .mermaidContent(_, mermaid):
+                mermaid.messageID
+            case let .toolCallHint(_, toolCall):
+                toolCall.messageID
+            case let .todoList(_, todoList):
+                todoList.messageID
+            case let .subAgentTask(_, task):
+                task.messageID
+            case let .agentHeader(_, header):
+                header.messageID
+            case let .executionError(_, error):
+                error.messageID
+            case .toolResultContent, .hint, .compactBoundary, .interruptionRetry, .activityReporting:
+                nil
             }
         }
     }
@@ -365,13 +396,16 @@ extension MessageListView {
         var latestDisplayedDay: Date?
         var inlineRenderedToolResultIDs: Set<String> = []
 
+        let selectionOffset: CGFloat = isSelectionModeEnabled ? 36 : 0
+
         // Reset per-entry leading inset table; rebuilt as entries are emitted.
         entryLeadingInsets.removeAll(keepingCapacity: true)
 
         func append(_ entry: Entry, leadingInset: CGFloat) {
             entries.append(entry)
-            if leadingInset != 0 {
-                entryLeadingInsets[entry.id] = leadingInset
+            let totalInset = leadingInset + selectionOffset
+            if totalInset != 0 {
+                entryLeadingInsets[entry.id] = totalInset
             }
         }
 

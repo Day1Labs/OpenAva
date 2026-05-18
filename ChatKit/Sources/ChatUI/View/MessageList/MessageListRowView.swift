@@ -25,6 +25,21 @@ class MessageListRowView: ListRowView, UIContextMenuInteractionDelegate {
 
     let contentView = UIView()
     var contextMenuProvider: ((CGPoint) -> UIMenu?)?
+    var selectionToggleHandler: (() -> Void)?
+
+    var isSelectionModeEnabled: Bool = false {
+        didSet {
+            guard oldValue != isSelectionModeEnabled else { return }
+            updateSelectionPresentation()
+        }
+    }
+
+    var isMessageSelected: Bool = false {
+        didSet {
+            guard oldValue != isMessageSelected else { return }
+            updateSelectionPresentation()
+        }
+    }
 
     /// Horizontal inset applied to `contentView` within the row's safe area.
     /// Set by the data source per entry; decoupled from message identity.
@@ -41,15 +56,34 @@ class MessageListRowView: ListRowView, UIContextMenuInteractionDelegate {
         return v
     }()
 
+    private let selectionButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.tintColor = ChatUIDesign.Color.brandOrange
+        button.backgroundColor = ChatUIDesign.Color.pureWhite
+        button.layer.cornerRadius = 11
+        button.layer.cornerCurve = .continuous
+        button.layer.borderWidth = 1
+        button.layer.borderColor = ChatUIDesign.Color.oatBorder.cgColor
+        button.isUserInteractionEnabled = false
+        button.alpha = 0
+        return button
+    }()
+
+    private lazy var selectionTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleSelectionTap))
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         clipsToBounds = false // tool tip will extend out
 
         addSubview(contentView)
+        addSubview(selectionButton)
         contentView.isUserInteractionEnabled = true
         contentView.addSubview(contextMenuAnchor)
 
         contentView.addInteraction(UIContextMenuInteraction(delegate: self))
+        selectionTapGesture.cancelsTouchesInView = true
+        addGestureRecognizer(selectionTapGesture)
+        updateSelectionPresentation()
     }
 
     @available(*, unavailable)
@@ -70,6 +104,12 @@ class MessageListRowView: ListRowView, UIContextMenuInteractionDelegate {
             width: bounds.width - insets.horizontal - leftOffset,
             height: max(0, bounds.height - insets.bottom)
         )
+        selectionButton.frame = CGRect(
+            x: insets.left,
+            y: max(0, min(8, (contentView.frame.height - 22) / 2)),
+            width: 22,
+            height: 22
+        )
     }
 
     func themeDidUpdate() {}
@@ -77,6 +117,9 @@ class MessageListRowView: ListRowView, UIContextMenuInteractionDelegate {
     override func prepareForReuse() {
         super.prepareForReuse()
         contextMenuProvider = nil
+        selectionToggleHandler = nil
+        isSelectionModeEnabled = false
+        isMessageSelected = false
         contentLeadingInset = 0
 
         // clear any LTXLabel selection
@@ -85,6 +128,27 @@ class MessageListRowView: ListRowView, UIContextMenuInteractionDelegate {
             queue.removeFirst()
             queue.append(contentsOf: v.subviews)
             (v as? LTXLabel)?.clearSelection()
+        }
+    }
+
+    @objc private func handleSelectionTap() {
+        guard isSelectionModeEnabled else { return }
+        selectionToggleHandler?()
+    }
+
+    private func updateSelectionPresentation() {
+        selectionTapGesture.isEnabled = isSelectionModeEnabled
+        selectionButton.alpha = isSelectionModeEnabled ? 1 : 0
+
+        if isMessageSelected {
+            let config = UIImage.SymbolConfiguration(pointSize: 22)
+            selectionButton.setImage(UIImage(systemName: "checkmark.circle.fill", withConfiguration: config), for: .normal)
+            selectionButton.backgroundColor = .clear
+            selectionButton.layer.borderWidth = 0
+        } else {
+            selectionButton.setImage(nil, for: .normal)
+            selectionButton.backgroundColor = ChatUIDesign.Color.pureWhite
+            selectionButton.layer.borderWidth = 1
         }
     }
 
