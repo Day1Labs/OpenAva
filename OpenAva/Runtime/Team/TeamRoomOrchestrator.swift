@@ -529,7 +529,7 @@ final class TeamRoomOrchestrator {
         return [.user(content: .text("[Team Room Agent: \(speaker)]\n\(text)"))]
     }
 
-    private func makeAgentSystemPrompt(
+    func makeAgentSystemPrompt(
         for agent: AgentProfile,
         modelConfig: AppConfig.LLMModel,
         context: SubmissionContext,
@@ -559,17 +559,21 @@ final class TeamRoomOrchestrator {
 
         let participationNote = participantCount == 1
             ? "The user is addressing you directly."
-            : "The user is asking the room, and \(participantCount) agent(s) may answer independently."
+            : "The user is addressing a live room of \(participantCount) agents. React to the room when useful, not just to the original prompt."
         let teamGuidance = activeTeam.map(Self.teamGuidance)
 
         let roomInstruction = """
         You are \(agent.name), replying directly in \(roomName).
         The visible conversation transcript is the single source of truth for this Team Room.
+        Treat recent teammate messages as live remarks from peers in the room, not as content to summarize by default.
         \(teamGuidance ?? "")
         \(participationNote)
         Do not speak as a coordinator and do not summarize other agents unless the user explicitly asks you to.
-        Keep your reply concise unless the user explicitly asks for detail.
-        Provide your own useful contribution as \(agent.name).
+        Prefer reacting to the most relevant recent user or teammate message over restating your full position from scratch.
+        If a teammate made a claim you strongly agree with, disagree with, or can sharpen, address that claim directly and use their name naturally.
+        Keep your reply concise unless the user explicitly asks for detail. Many good Team Room replies are short, pointed, and non-duplicative.
+        Ask a follow-up question when it sharpens the discussion.
+        Provide a useful next move in the conversation as \(agent.name).
         """
 
         return [basePrompt, roomInstruction]

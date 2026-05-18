@@ -72,6 +72,8 @@ final class TeamSwarmCapabilityTests: XCTestCase {
         XCTAssertTrue(prompt.contains("team_message_send"))
         XCTAssertTrue(prompt.contains("team_task_update"))
         XCTAssertTrue(prompt.contains("team_plan_approve"))
+        XCTAssertTrue(prompt.contains("Prefer reacting to a specific claim or question"))
+        XCTAssertTrue(prompt.contains("Keep discussion replies non-duplicative"))
     }
 
     @MainActor

@@ -139,6 +139,42 @@ final class TeamRoomOrchestratorTests: XCTestCase {
         })
     }
 
+    func testMakeAgentSystemPromptEncouragesInteractionWithRecentTeammateMessages() {
+        let agent = makeAgent(name: "Reviewer", emoji: "🧪")
+        let teammate = makeAgent(name: "Builder", emoji: "🛠️")
+        let team = TeamProfile(name: "Review Team", members: [agent.id, teammate.id])
+        let context = TeamRoomOrchestrator.SubmissionContext(
+            activeContext: .team(team.id),
+            teams: [team],
+            agents: [agent, teammate],
+            fallbackModelConfig: nil,
+            agentCount: 2
+        )
+        let modelConfig = AppConfig.LLMModel(
+            name: "Test Model",
+            endpoint: URL(string: "https://example.com/v1/chat/completions"),
+            apiKey: "test-key",
+            apiKeyHeader: "Authorization",
+            model: "test-model",
+            provider: "openai-compatible",
+            systemPrompt: nil,
+            contextTokens: 128_000,
+            requestTimeoutMs: 60000
+        )
+
+        let prompt = TeamRoomOrchestrator.shared.makeAgentSystemPrompt(
+            for: agent,
+            modelConfig: modelConfig,
+            context: context,
+            participantCount: 2
+        )
+
+        XCTAssertTrue(prompt.contains("The user is addressing a live room of 2 agents."))
+        XCTAssertTrue(prompt.contains("Treat recent teammate messages as live remarks from peers in the room"))
+        XCTAssertTrue(prompt.contains("Prefer reacting to the most relevant recent user or teammate message"))
+        XCTAssertTrue(prompt.contains("short, pointed, and non-duplicative"))
+    }
+
     private static func userText(from message: ChatRequestBody.Message) -> String? {
         guard case let .user(content, _) = message else { return nil }
         guard case let .text(text) = content else { return nil }

@@ -158,6 +158,9 @@ enum AgentPromptBuilder {
             OpenAva currently has \(agentCount) agents, so you may be part of an implicit collaboration team with \(teammateCount) other agent(s).
             In a Team Room, each agent speaks directly as itself. Do not pretend to be a coordinator, do not speak on behalf of other agents, and do not synthesize other agents' views unless the user explicitly asks you to.
             Treat mentions, teammate names, and words like "everyone" as natural-language intent signals, not as fixed client-side commands. Use judgment instead of relying on syntax rules.
+            During discussion, treat recent teammate messages as live conversation context. Prefer reacting to a specific claim or question over restating your entire position from scratch.
+            If a teammate just made a point you strongly agree with, disagree with, or can sharpen, address that point directly and use the teammate's name naturally.
+            Keep discussion replies non-duplicative: advance the conversation with a challenge, refinement, example, tradeoff, or follow-up question instead of echoing what is already in the room.
             Use `team_status` first to inspect teammates, shared tasks, and pending approvals before coordinating complex work.
             For discussion, message the teammates whose perspectives materially improve the answer; their replies are delivered automatically as team messages when they finish, so do not poll for responses.
             For execution, create or update shared tasks when persistent coordination state is useful, and use `team_message_send` to delegate or unblock teammates; completion summaries and follow-up questions arrive automatically.

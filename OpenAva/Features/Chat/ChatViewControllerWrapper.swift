@@ -172,68 +172,6 @@ private final class SwiftUIOverlayController<Content: View>: UIViewController {
     }
 }
 
-#if targetEnvironment(macCatalyst)
-    private final class CatalystChatViewController: ChatViewController {
-        var onOpenModelSettings: (() -> Void)?
-        private var commandObserver: NSObjectProtocol?
-
-        override var canBecomeFirstResponder: Bool {
-            true
-        }
-
-        private func installCommandObserverIfNeeded() {
-            guard commandObserver == nil else { return }
-            commandObserver = NotificationCenter.default.addObserver(
-                forName: .openAvaCatalystGlobalCommand,
-                object: nil,
-                queue: .main
-            ) { [weak self] notification in
-                guard let command = CatalystGlobalCommandCenter.resolve(notification) else { return }
-                Task { @MainActor [weak self] in
-                    self?.handleGlobalCommand(command)
-                }
-            }
-        }
-
-        isolated deinit {
-            if let commandObserver {
-                NotificationCenter.default.removeObserver(commandObserver)
-            }
-        }
-
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            installCommandObserverIfNeeded()
-            becomeFirstResponder()
-        }
-
-        override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-            super.viewWillTransition(to: size, with: coordinator)
-            coordinator.animate(alongsideTransition: { [weak self] _ in
-                self?.view.setNeedsLayout()
-                self?.view.layoutIfNeeded()
-            })
-        }
-
-        private func handleGlobalCommand(_ command: CatalystGlobalCommand) {
-            switch command {
-            case .openModelSettings:
-                handleOpenModelSettingsShortcut()
-            case .focusInput:
-                handleFocusInputShortcut()
-            }
-        }
-
-        @objc private func handleOpenModelSettingsShortcut() {
-            onOpenModelSettings?()
-        }
-
-        @objc private func handleFocusInputShortcut() {
-            chatInputView.focus()
-        }
-    }
-#endif
-
 /// SwiftUI wrapper for ChatViewController from Common/ChatUI.
 struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     private enum QuickCommand {
@@ -273,6 +211,7 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
     let pendingAutoSendID: String?
     let pendingAutoSendMessage: String?
     let onConsumePendingAutoSend: ((String) -> Void)?
+    let focusInputRequestID: UUID?
     let onMenuAction: ((MenuAction) -> Void)?
     let onSessionSwitch: ((ActiveSessionContext) -> Void)?
     let onModelSwitch: ((String) -> Void)?
@@ -713,46 +652,22 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         )
         let chatViewController: ChatViewController
 
-        #if targetEnvironment(macCatalyst)
-            let catalystController: CatalystChatViewController
-            if let providedSession = sessionContext.providedSession {
-                catalystController = CatalystChatViewController(
-                    session: providedSession,
-                    sessionID: sessionID,
-                    models: sessionContext.models,
-                    sessionConfiguration: sessionContext.sessionConfiguration,
-                    configuration: viewConfiguration
-                )
-            } else {
-                catalystController = CatalystChatViewController(
-                    sessionID: sessionID,
-                    models: sessionContext.models,
-                    sessionConfiguration: sessionContext.sessionConfiguration,
-                    configuration: viewConfiguration
-                )
-            }
-            catalystController.onOpenModelSettings = { [weak coordinator = context.coordinator] in
-                coordinator?.onMenuAction?(.openLLM)
-            }
-            chatViewController = catalystController
-        #else
-            if let providedSession = sessionContext.providedSession {
-                chatViewController = ChatViewController(
-                    session: providedSession,
-                    sessionID: sessionID,
-                    models: sessionContext.models,
-                    sessionConfiguration: sessionContext.sessionConfiguration,
-                    configuration: viewConfiguration
-                )
-            } else {
-                chatViewController = ChatViewController(
-                    sessionID: sessionID,
-                    models: sessionContext.models,
-                    sessionConfiguration: sessionContext.sessionConfiguration,
-                    configuration: viewConfiguration
-                )
-            }
-        #endif
+        if let providedSession = sessionContext.providedSession {
+            chatViewController = ChatViewController(
+                session: providedSession,
+                sessionID: sessionID,
+                models: sessionContext.models,
+                sessionConfiguration: sessionContext.sessionConfiguration,
+                configuration: viewConfiguration
+            )
+        } else {
+            chatViewController = ChatViewController(
+                sessionID: sessionID,
+                models: sessionContext.models,
+                sessionConfiguration: sessionContext.sessionConfiguration,
+                configuration: viewConfiguration
+            )
+        }
 
         // Persist input drafts per visible chat context so switching rooms does not leak or lose drafts.
         chatViewController.emptyStateContent = emptyStateContent
@@ -873,13 +788,12 @@ struct ChatViewControllerWrapper: UIViewControllerRepresentable {
         chatViewController.refreshNavigationMenus()
         chatViewController.updateAutoCompactEnabled(autoCompactEnabled)
 
-        #if targetEnvironment(macCatalyst)
-            if let catalystController = chatViewController as? CatalystChatViewController {
-                catalystController.onOpenModelSettings = { [weak coordinator = context.coordinator] in
-                    coordinator?.onMenuAction?(.openLLM)
-                }
-            }
-        #endif
+        if let focusInputRequestID,
+           focusInputRequestID != context.coordinator.processedFocusInputRequestID
+        {
+            context.coordinator.processedFocusInputRequestID = focusInputRequestID
+            chatViewController.chatInputView.focus()
+        }
 
         chatViewController.updateHeader(headerState)
         context.coordinator.configureInputControls(on: chatViewController)
@@ -890,6 +804,7 @@ extension ChatViewControllerWrapper {
     final class Coordinator: NSObject, ChatViewControllerMenuDelegate {
         /// Tracks the last auto-sent request ID to prevent re-submission on re-render.
         var processedAutoSendID: String?
+        var processedFocusInputRequestID: UUID?
         var onMenuAction: ((MenuAction) -> Void)?
         var allAgentsTeam: TeamProfile?
         var teams: [TeamProfile]
