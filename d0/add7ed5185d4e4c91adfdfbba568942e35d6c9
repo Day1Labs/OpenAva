@@ -1,0 +1,123 @@
+OpenAva/Features/Chat/ChatViewController.swift
+  9fcb925384ce0208 692-700,702-710,776-778,780-783,796-798,800-803 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0b32d6d98c26b28df0156c","tool_type":"agent","tool_id":"SearchReplace","line_ranges":[{"Range":[692,700]},{"Range":[702,710]},{"Range":[776,778]},{"Range":[780,783]},{"Range":[796,798]},{"Range":[800,803]}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "d0add7ed5185d4e4c91adfdfbba568942e35d6c9",
+  "prompts": {
+    "9fcb925384ce0208": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a0b2f67d98c26b28df0143a",
+        "model": "gemini-3.1-pro__dev"
+      },
+      "human_author": "Y2 <yuanyan.cao@gmail.com>",
+      "messages": [],
+      "total_additions": 32,
+      "total_deletions": 6,
+      "accepted_lines": 170,
+      "overriden_lines": 0
+    }
+  },
+  "attestation_metadata": {
+    "OpenAva/Features/Chat/ChatViewController.swift": [
+      {
+        "hash": "9fcb925384ce0208",
+        "line_ranges": [
+          {
+            "Range": [
+              692,
+              700
+            ]
+          },
+          {
+            "Range": [
+              702,
+              710
+            ]
+          },
+          {
+            "Range": [
+              776,
+              778
+            ]
+          },
+          {
+            "Range": [
+              780,
+              783
+            ]
+          },
+          {
+            "Range": [
+              796,
+              798
+            ]
+          },
+          {
+            "Range": [
+              800,
+              803
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0b32d6d98c26b28df0156c",
+            "tool_type": "agent",
+            "tool_id": "SearchReplace",
+            "line_ranges": [
+              {
+                "Range": [
+                  692,
+                  700
+                ]
+              },
+              {
+                "Range": [
+                  702,
+                  710
+                ]
+              },
+              {
+                "Range": [
+                  776,
+                  778
+                ]
+              },
+              {
+                "Range": [
+                  780,
+                  783
+                ]
+              },
+              {
+                "Range": [
+                  796,
+                  798
+                ]
+              },
+              {
+                "Range": [
+                  800,
+                  803
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "9fcb925384ce0208": {
+      "tool": "trae",
+      "conversation_id": "6a0b2f67d98c26b28df0143a",
+      "session_id": "6a0b2f67d98c26b28df0143a",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
